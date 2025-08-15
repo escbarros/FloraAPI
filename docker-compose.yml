@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: flora-postgres
+    environment:
+      POSTGRES_DB: flora_db
+      POSTGRES_USER: flora_user
+      POSTGRES_PASSWORD: flora_password
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - flora-network
+
+volumes:
+  postgres_data:
+
+networks:
+  flora-network:
+    driver: bridge
