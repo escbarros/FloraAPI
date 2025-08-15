@@ -21,12 +21,18 @@ describe('AuthService', () => {
     ...overrides,
   });
 
+  const createSigninData = (overrides = {}) => ({
+    email: 'test@example.com',
+    password: 'password123',
+    ...overrides,
+  });
+
   const createMockUser = (overrides = {}) => ({
     id: '1',
     name: 'Test User',
     email: 'test@example.com',
     password: 'hashedPassword123',
-    created_at: new Date('2023-01-01'),
+    created_at: new Date(),
     ...overrides,
   });
 
@@ -115,6 +121,129 @@ describe('AuthService', () => {
     });
   });
 
+  describe('signin', () => {
+    it('should successfully signin a user with valid credentials', async () => {
+      const signinData = createSigninData();
+      const mockUser = createMockUser();
+
+      const findUniqueSpy = jest
+        .spyOn(prismaService.user, 'findUnique')
+        .mockResolvedValue(mockUser);
+      mockedBcrypt.compare.mockResolvedValue(true as never);
+
+      const result = await service.signin(signinData);
+
+      expect(findUniqueSpy).toHaveBeenCalledWith({
+        where: { email: signinData.email },
+      });
+      expect(mockedBcrypt.compare).toHaveBeenCalledWith(
+        signinData.password,
+        mockUser.password,
+      );
+      expect(result).toEqual(mockUser);
+    });
+
+    it('should handle user not found error', async () => {
+      const signinData = createSigninData();
+
+      const findUniqueSpy = jest
+        .spyOn(prismaService.user, 'findUnique')
+        .mockResolvedValue(null);
+
+      await expect(service.signin(signinData)).rejects.toThrow(
+        'invalid credentials',
+      );
+      expect(findUniqueSpy).toHaveBeenCalledWith({
+        where: { email: signinData.email },
+      });
+      expect(mockedBcrypt.compare).not.toHaveBeenCalled();
+    });
+
+    it('should handle invalid password error', async () => {
+      const signinData = createSigninData();
+      const mockUser = createMockUser();
+
+      const findUniqueSpy = jest
+        .spyOn(prismaService.user, 'findUnique')
+        .mockResolvedValue(mockUser);
+      mockedBcrypt.compare.mockResolvedValue(false as never);
+
+      await expect(service.signin(signinData)).rejects.toThrow(
+        'invalid credentials',
+      );
+      expect(findUniqueSpy).toHaveBeenCalledWith({
+        where: { email: signinData.email },
+      });
+      expect(mockedBcrypt.compare).toHaveBeenCalledWith(
+        signinData.password,
+        mockUser.password,
+      );
+    });
+
+    it('should handle database lookup errors', async () => {
+      const signinData = createSigninData();
+      const dbError = new Error('Database connection failed');
+
+      const findUniqueSpy = jest
+        .spyOn(prismaService.user, 'findUnique')
+        .mockRejectedValue(dbError);
+
+      await expect(service.signin(signinData)).rejects.toThrow(dbError);
+      expect(findUniqueSpy).toHaveBeenCalledWith({
+        where: { email: signinData.email },
+      });
+      expect(mockedBcrypt.compare).not.toHaveBeenCalled();
+    });
+
+    it('should handle bcrypt compare errors', async () => {
+      const signinData = createSigninData();
+      const mockUser = createMockUser();
+      const compareError = new Error('Bcrypt comparison failed');
+
+      const findUniqueSpy = jest
+        .spyOn(prismaService.user, 'findUnique')
+        .mockResolvedValue(mockUser);
+      mockedBcrypt.compare.mockRejectedValue(compareError as never);
+
+      await expect(service.signin(signinData)).rejects.toThrow(compareError);
+      expect(findUniqueSpy).toHaveBeenCalledWith({
+        where: { email: signinData.email },
+      });
+      expect(mockedBcrypt.compare).toHaveBeenCalledWith(
+        signinData.password,
+        mockUser.password,
+      );
+    });
+
+    it('should work with different user credentials', async () => {
+      const signinData = createSigninData({
+        email: 'another@test.com',
+        password: 'differentPassword',
+      });
+      const mockUser = createMockUser({
+        id: '2',
+        email: 'another@test.com',
+        password: 'differentHashedPassword',
+      });
+
+      const findUniqueSpy = jest
+        .spyOn(prismaService.user, 'findUnique')
+        .mockResolvedValue(mockUser);
+      mockedBcrypt.compare.mockResolvedValue(true as never);
+
+      const result = await service.signin(signinData);
+
+      expect(findUniqueSpy).toHaveBeenCalledWith({
+        where: { email: 'another@test.com' },
+      });
+      expect(mockedBcrypt.compare).toHaveBeenCalledWith(
+        'differentPassword',
+        'differentHashedPassword',
+      );
+      expect(result).toEqual(mockUser);
+    });
+  });
+
   describe('generateJwt', () => {
     it('should generate JWT with user data using default secret', () => {
       const user = { id: '1', email: 'test@example.com' };
@@ -127,6 +256,24 @@ describe('AuthService', () => {
       expect(mockedJwt.sign).toHaveBeenCalledWith(
         { sub: user.id, email: user.email },
         'secret',
+        { expiresIn: '1d' },
+      );
+      expect(result).toBe(mockToken);
+    });
+
+    it('should generate JWT with custom JWT_SECRET from environment', () => {
+      const user = { id: '2', email: 'another@test.com' };
+      const mockToken = 'custom-jwt-token';
+      const customSecret = 'custom-secret-key';
+
+      process.env.JWT_SECRET = customSecret;
+      mockedJwt.sign.mockReturnValue(mockToken as never);
+
+      const result = service.generateJwt(user);
+
+      expect(mockedJwt.sign).toHaveBeenCalledWith(
+        { sub: user.id, email: user.email },
+        customSecret,
         { expiresIn: '1d' },
       );
       expect(result).toBe(mockToken);

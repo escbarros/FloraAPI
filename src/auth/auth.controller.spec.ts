@@ -159,7 +159,7 @@ describe('AuthController', () => {
       const mockToken = 'jwt-token-123';
       const expectedResponse = new AuthResponseDto(
         mockUser.id,
-        mockUser.email,
+        mockUser.name,
         mockToken,
       );
       const signinSpy = jest
@@ -176,6 +176,80 @@ describe('AuthController', () => {
       expect(generateJwtSpy).toHaveBeenCalledWith(mockUser);
       expect(generateJwtSpy).toHaveBeenCalledTimes(1);
       expect(result).toEqual(expectedResponse);
+    });
+    it('should handle validation error when email is missing', async () => {
+      const invalidSigninBody = createSigninBody({ email: undefined });
+
+      await expect(controller.signin(invalidSigninBody)).rejects.toThrow(
+        ZodError,
+      );
+    });
+    it('should handle validation error when email is invalid', async () => {
+      const invalidSigninBody = createSigninBody({ email: 'invalid-email' });
+
+      await expect(controller.signin(invalidSigninBody)).rejects.toThrow(
+        ZodError,
+      );
+    });
+    it('should handle validation error when password is missing', async () => {
+      const invalidSigninBody = createSigninBody({ password: undefined });
+
+      await expect(controller.signin(invalidSigninBody)).rejects.toThrow(
+        ZodError,
+      );
+    });
+    it('should handle validation error when password is invalid', async () => {
+      const invalidSigninBody = createSigninBody({ password: '123' });
+
+      await expect(controller.signin(invalidSigninBody)).rejects.toThrow(
+        ZodError,
+      );
+    });
+    it('should handle email with no account error', async () => {
+      const signinBody = createSigninBody();
+      const error = new Error('invalid credentials');
+
+      const signinSpy = jest
+        .spyOn(authService, 'signin')
+        .mockRejectedValue(error);
+      const generateJwtSpy = jest.spyOn(authService, 'generateJwt');
+
+      await expect(controller.signin(signinBody)).rejects.toThrow(error);
+      expect(signinSpy).toHaveBeenCalledWith(signinBody);
+      expect(generateJwtSpy).not.toHaveBeenCalled();
+    });
+    it('should handle wrong password error', async () => {
+      const signinBody = createSigninBody();
+      const error = new Error('invalid credentials');
+
+      const signinSpy = jest
+        .spyOn(authService, 'signin')
+        .mockRejectedValue(error);
+      const generateJwtSpy = jest.spyOn(authService, 'generateJwt');
+
+      await expect(controller.signin(signinBody)).rejects.toThrow(error);
+      expect(signinSpy).toHaveBeenCalledWith(signinBody);
+      expect(generateJwtSpy).not.toHaveBeenCalled();
+    });
+
+    it('should handle JWT generation errors', async () => {
+      const signinBody = createSigninBody();
+      const mockUser = createMockUser();
+      const jwtError = new Error('JWT generation failed');
+
+      const signinSpy = jest
+        .spyOn(authService, 'signin')
+        .mockResolvedValue(mockUser);
+
+      const generateJwtSpy = jest
+        .spyOn(authService, 'generateJwt')
+        .mockImplementation(() => {
+          throw jwtError;
+        });
+
+      await expect(controller.signin(signinBody)).rejects.toThrow(jwtError);
+      expect(signinSpy).toHaveBeenCalledWith(signinBody);
+      expect(generateJwtSpy).toHaveBeenCalledWith(mockUser);
     });
   });
 
