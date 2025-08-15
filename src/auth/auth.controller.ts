@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { AuthSignUpRequestSchema } from './dto/auth-signup-request-dto';
 import { AuthService } from './auth.service';
 import { AuthResponseDto } from './dto/auth-response-dto';
@@ -61,11 +61,50 @@ export class AuthController {
   }
 
   @Post('signin')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'User login',
+    description: 'Login an existing user with email and password',
+  })
+  @ApiBody({
+    description: 'User login data',
+    schema: {
+      type: 'object',
+      properties: {
+        email: {
+          type: 'string',
+          format: 'email',
+          example: 'user@example.com',
+        },
+        password: {
+          type: 'string',
+          minLength: 6,
+          example: 'password123',
+        },
+      },
+      required: ['email', 'password'],
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request - Invalid input data',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'User logged on successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', example: 'uuid-string' },
+        name: { type: 'string', example: 'John Doe' },
+        token: { type: 'string', example: 'jwt-token-string' },
+      },
+    },
+  })
   async signin(@Body() body: any) {
-    console.log(body);
     const parseResult = AuthSignInRequestSchema.parse(body);
     const response = await this.authService.signin(parseResult);
     const token = this.authService.generateJwt(response);
-    return new AuthResponseDto(response.id, response.email, token);
+    return new AuthResponseDto(response.id, response.name, token);
   }
 }
