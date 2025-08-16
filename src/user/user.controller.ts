@@ -1,6 +1,15 @@
-import { Controller, Get, Query, Request, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Query,
+  Request,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtGuard } from '../shared/middleware/jwt.guard';
+import { ConditionalCacheInterceptor } from '../shared/interceptors/conditional-cache.interceptor';
+import { Cacheable } from '../shared/decorators/cacheable.decorator';
 import type { RequestWithUser } from '../shared/types/JwtRequest';
 import { UserService } from './user.service';
 import { UserListPaginationRequestSchema } from './dto/user-list-pagination-request-dto';
@@ -11,6 +20,8 @@ import { SwaggerUserProfileEndpoint } from './decorators/swagger-user-profile-en
 @ApiTags('User')
 @ApiBearerAuth('JWT-auth')
 @UseGuards(JwtGuard)
+@UseInterceptors(ConditionalCacheInterceptor)
+@Cacheable({ ttl: 300, keyPrefix: 'user' })
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}

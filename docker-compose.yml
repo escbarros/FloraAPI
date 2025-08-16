@@ -13,6 +13,15 @@ services:
     networks:
       - flora-network
 
+  redis:
+    image: redis:7-alpine
+    container_name: flora-redis
+    ports:
+      - '6379:6379'
+    networks:
+      - flora-network
+    command: ['redis-server', '--appendonly', 'yes']
+
 volumes:
   postgres_data:
 

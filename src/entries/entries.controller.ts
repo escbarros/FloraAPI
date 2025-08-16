@@ -9,9 +9,13 @@ import {
   Query,
   Request,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtGuard } from '../shared/middleware/jwt.guard';
+import { ConditionalCacheInterceptor } from '../shared/interceptors/conditional-cache.interceptor';
+import { Cacheable } from '../shared/decorators/cacheable.decorator';
+import { CacheService } from '../shared/cache.service';
 import type { RequestWithUser } from '../shared/types/JwtRequest';
 import { EntriesService } from './entries.service';
 import { EntryQuerySearchRequestSchema } from './dto/entry-query-search-request-dto';
@@ -23,9 +27,14 @@ import { SwaggerRemoveWordFromFavoritesEndpoint } from './decorators/swagger-rem
 @ApiTags('Entries')
 @ApiBearerAuth('JWT-auth')
 @UseGuards(JwtGuard)
+@UseInterceptors(ConditionalCacheInterceptor)
+@Cacheable({ ttl: 300, keyPrefix: 'entries' })
 @Controller('entries')
 export class EntriesController {
-  constructor(private readonly entryService: EntriesService) {}
+  constructor(
+    private readonly entryService: EntriesService,
+    private readonly cacheService: CacheService,
+  ) {}
 
   @Get('en')
   @SwaggerQuerySearchEndpoint()
@@ -66,6 +75,8 @@ export class EntriesController {
     const { sub: userId } = req.user;
     const wordId = await this.entryService.getWordId(word);
     await this.entryService.addWordToFavorites(userId, wordId);
+
+    await this.cacheService.invalidateUserCache(userId);
   }
 
   @Delete('en/:word/unfavorite')
@@ -78,5 +89,7 @@ export class EntriesController {
     const { sub: userId } = req.user;
     const wordId = await this.entryService.getWordId(word);
     await this.entryService.removeWordFromFavorites(userId, wordId);
+
+    await this.cacheService.invalidateUserCache(userId);
   }
 }

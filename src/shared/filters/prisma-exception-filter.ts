@@ -1,4 +1,3 @@
-// src/shared/filters/prisma-exception.filter.ts
 import { ExceptionFilter, Catch, ArgumentsHost } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { Response } from 'express';
