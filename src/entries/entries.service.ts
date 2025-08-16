@@ -79,4 +79,17 @@ export class EntriesService {
       throw new Error('failed to fetch entry details');
     }
   }
+
+  async getWordId(word: string): Promise<string> {
+    const entry = await this.prisma.words.findUnique({
+      where: { word },
+      select: { id: true },
+    });
+
+    if (!entry) {
+      throw new NotFoundException(`Word not found: ${word}`);
+    }
+
+    return entry.id;
+  }
 }

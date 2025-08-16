@@ -13,13 +13,17 @@ import { EntriesService } from './entries.service';
 import { EntryQuerySearchRequestSchema } from './dto/entry-query-search-request-dto';
 import { SwaggerQuerySearchEndpoint } from './decorators/swagger-query-search-endpoint.decorator';
 import { SwaggerWordDetailsEndpoint } from './decorators/swagger-word-details-endpoint.decorator';
+import { UserService } from '../user/user.service';
 
 @ApiTags('Entries')
 @ApiBearerAuth('JWT-auth')
 @UseGuards(JwtGuard)
 @Controller('entries')
 export class EntriesController {
-  constructor(private readonly entryService: EntriesService) {}
+  constructor(
+    private readonly entryService: EntriesService,
+    private readonly userService: UserService,
+  ) {}
 
   @Get('en')
   @SwaggerQuerySearchEndpoint()
@@ -43,7 +47,10 @@ export class EntriesController {
     @Request() req: RequestWithUser,
     @Param('word') word: string,
   ) {
+    const { sub: id } = req.user;
+    const wordId = await this.entryService.getWordId(word);
     const wordDetails = await this.entryService.getEntryDetail(word);
+    await this.userService.addWordToHistory(id, wordId);
     return wordDetails;
   }
 }

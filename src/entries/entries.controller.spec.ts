@@ -3,6 +3,7 @@ import { EntriesController } from './entries.controller';
 import { EntriesService } from './entries.service';
 import { JwtGuard } from '../shared/middleware/jwt.guard';
 import type { RequestWithUser } from '../shared/types/JwtRequest';
+import { UserService } from '../user/user.service';
 
 describe('EntriesController', () => {
   let controller: EntriesController;
@@ -10,6 +11,11 @@ describe('EntriesController', () => {
   const mockEntriesService = {
     getEntries: jest.fn(),
     getEntryDetail: jest.fn(),
+    getWordId: jest.fn(),
+  };
+
+  const mockUserService = {
+    addWordToHistory: jest.fn(),
   };
 
   const mockJwtGuard = {
@@ -33,6 +39,10 @@ describe('EntriesController', () => {
         {
           provide: EntriesService,
           useValue: mockEntriesService,
+        },
+        {
+          provide: UserService,
+          useValue: mockUserService,
         },
       ],
     })
