@@ -65,8 +65,8 @@ export class EntriesController {
   async getEntries(
     @Request() req: RequestWithUser,
     @Query('search') search?: string,
-    @Query('limit') limit?: number,
-    @Query('page') page?: number,
+    @Query('limit') limit?: string,
+    @Query('page') page?: string,
   ) {
     const parseResult = EntryQuerySearchRequestSchema.parse({
       search,
