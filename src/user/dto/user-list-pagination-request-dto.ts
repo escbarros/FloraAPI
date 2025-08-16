@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const UserHistoryRequestSchema = z.object({
+export const UserListPaginationRequestSchema = z.object({
   userId: z.uuid(),
   limit: z
     .string()
@@ -16,4 +16,6 @@ export const UserHistoryRequestSchema = z.object({
     .default(1),
 });
 
-export type UserHistoryRequestDto = z.infer<typeof UserHistoryRequestSchema>;
+export type UserListPaginationRequestDto = z.infer<
+  typeof UserListPaginationRequestSchema
+>;

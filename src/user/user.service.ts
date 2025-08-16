@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../shared/prisma.service';
-import { UserHistoryRequestDto } from './dto/user-history-request-dto';
-import { UserHistoryResponseDto } from './dto/user-history-response-dto';
+import { UserListPaginationRequestDto } from './dto/user-list-pagination-request-dto';
+import { UserListPagination } from './dto/user-history-response-dto';
 
 @Injectable()
 export class UserService {
@@ -11,41 +11,66 @@ export class UserService {
     userId,
     limit,
     page,
-  }: UserHistoryRequestDto): Promise<UserHistoryResponseDto> {
+  }: UserListPaginationRequestDto): Promise<UserListPagination> {
     const skip = (page - 1) * limit;
 
-    const [historyRecords, totalDocs] = await Promise.all([
+    const [records, totalDocs] = await Promise.all([
       this.prisma.history.findMany({
-        where: {
-          user_id: userId,
-        },
+        where: { user_id: userId },
         select: {
-          word: {
-            select: {
-              word: true,
-            },
-          },
+          word: { select: { word: true } },
           created_at: true,
         },
         skip,
         take: limit,
-        orderBy: {
-          created_at: 'desc',
-        },
+        orderBy: { created_at: 'desc' },
       }),
       this.prisma.history.count({
-        where: {
-          user_id: userId,
-        },
+        where: { user_id: userId },
       }),
     ]);
 
+    return this.buildPaginatedResponse(records, totalDocs, page, limit);
+  }
+
+  async getUserFavorites({
+    userId,
+    limit,
+    page,
+  }: UserListPaginationRequestDto): Promise<UserListPagination> {
+    const skip = (page - 1) * limit;
+
+    const [records, totalDocs] = await Promise.all([
+      this.prisma.favorites.findMany({
+        where: { user_id: userId },
+        select: {
+          word: { select: { word: true } },
+          created_at: true,
+        },
+        skip,
+        take: limit,
+        orderBy: { created_at: 'desc' },
+      }),
+      this.prisma.favorites.count({
+        where: { user_id: userId },
+      }),
+    ]);
+
+    return this.buildPaginatedResponse(records, totalDocs, page, limit);
+  }
+
+  private buildPaginatedResponse(
+    records: Array<{ word: { word: string }; created_at: Date }>,
+    totalDocs: number,
+    page: number,
+    limit: number,
+  ): UserListPagination {
     const totalPages = Math.ceil(totalDocs / limit);
     const hasNext = page < totalPages;
     const hasPrev = page > 1;
 
     return {
-      results: historyRecords.map((record) => ({
+      results: records.map((record) => ({
         word: record.word.word,
         added: record.created_at,
       })),

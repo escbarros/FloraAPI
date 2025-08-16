@@ -3,7 +3,7 @@ class WordHistoryEntry {
   added: Date;
 }
 
-export class UserHistoryResponseDto {
+export class UserListPagination {
   results: WordHistoryEntry[];
   totalDocs: number;
   page: number;

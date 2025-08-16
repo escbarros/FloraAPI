@@ -3,7 +3,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtGuard } from '../shared/middleware/jwt.guard';
 import type { RequestWithUser } from '../shared/types/JwtRequest';
 import { UserService } from './user.service';
-import { UserHistoryRequestSchema } from './dto/user-history-request-dto';
+import { UserListPaginationRequestSchema } from './dto/user-list-pagination-request-dto';
 import { SwaggerUserHistoryEndpoint } from './decorators/swagger-user-history-endpoint.decorator';
 
 @ApiTags('User')
@@ -20,12 +20,28 @@ export class UserController {
     @Query('page') page?: string,
   ) {
     const { sub: userId } = req.user;
-    const parseResult = UserHistoryRequestSchema.parse({
+    const parseResult = UserListPaginationRequestSchema.parse({
       userId,
       limit,
       page,
     });
     const userHistory = await this.userService.getUserHistory(parseResult);
     return userHistory;
+  }
+
+  @Get('/favorites')
+  async getUserFavorites(
+    @Request() req: RequestWithUser,
+    @Query('limit') limit?: string,
+    @Query('page') page?: string,
+  ) {
+    const { sub: userId } = req.user;
+    const parseResult = UserListPaginationRequestSchema.parse({
+      userId,
+      limit,
+      page,
+    });
+    const userFavorites = await this.userService.getUserFavorites(parseResult);
+    return userFavorites;
   }
 }
