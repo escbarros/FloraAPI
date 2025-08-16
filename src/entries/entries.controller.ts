@@ -6,17 +6,13 @@ import {
   Request,
   UseGuards,
 } from '@nestjs/common';
-import {
-  ApiBearerAuth,
-  ApiOperation,
-  ApiQuery,
-  ApiResponse,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtGuard } from '../shared/middleware/jwt.guard';
 import type { RequestWithUser } from '../shared/types/JwtRequest';
 import { EntriesService } from './entries.service';
 import { EntryQuerySearchRequestSchema } from './dto/entry-query-search-request-dto';
+import { SwaggerQuerySearchEndpoint } from './decorators/swagger-query-search-endpoint.decorator';
+import { SwaggerWordDetailsEndpoint } from './decorators/swagger-word-details-endpoint.decorator';
 
 @ApiTags('Entries')
 @ApiBearerAuth('JWT-auth')
@@ -26,49 +22,7 @@ export class EntriesController {
   constructor(private readonly entryService: EntriesService) {}
 
   @Get('en')
-  @ApiOperation({
-    summary: 'Search for entries',
-    description: 'Search for entries by keyword',
-  })
-  @ApiQuery({
-    name: 'search',
-    required: false,
-    type: String,
-    description: 'Search keyword',
-    example: 'fire',
-  })
-  @ApiQuery({
-    name: 'page',
-    required: false,
-    type: Number,
-    description: 'Page number',
-    example: 1,
-  })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    type: Number,
-    description: 'Number of results per page',
-    example: 10,
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Search results',
-    schema: {
-      type: 'object',
-      properties: {
-        result: {
-          type: 'string[]',
-          example: '[firebox, fireshine, pinfire, firespout]',
-        },
-        totalDocs: { type: 'number', example: 200 },
-        page: { type: 'number', example: 1 },
-        totalPages: { type: 'number', example: 50 },
-        hasNext: { type: 'boolean', example: true },
-        hasPrev: { type: 'boolean', example: false },
-      },
-    },
-  })
+  @SwaggerQuerySearchEndpoint()
   async getEntries(
     @Query('search') search?: string,
     @Query('limit') limit?: string,
@@ -84,6 +38,7 @@ export class EntriesController {
   }
 
   @Get('en/:word')
+  @SwaggerWordDetailsEndpoint()
   async getEntryDetail(
     @Request() req: RequestWithUser,
     @Param('word') word: string,

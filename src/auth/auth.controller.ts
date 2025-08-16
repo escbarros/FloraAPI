@@ -1,58 +1,19 @@
-import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
+import { Body, Controller, Post } from '@nestjs/common';
 import { AuthSignUpRequestSchema } from './dto/auth-signup-request-dto';
 import { AuthService } from './auth.service';
 import { AuthResponseDto } from './dto/auth-response-dto';
 import { AuthSignInRequestSchema } from './dto/auth-signin-request-dto';
-import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiTags } from '@nestjs/swagger';
+import { SwaggerSignupEndpoint } from './decorators/swagger-signup-endpoint.decorator';
+import { SwaggerSigninEndpoint } from './decorators/swagger-signin-endpoint.decorator';
 
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
+
   @Post('signup')
-  @ApiOperation({
-    summary: 'User registration',
-    description: 'Register a new user with email, name and password',
-  })
-  @ApiBody({
-    description: 'User registration data',
-    schema: {
-      type: 'object',
-      properties: {
-        email: {
-          type: 'string',
-          format: 'email',
-          example: 'user@example.com',
-        },
-        name: {
-          type: 'string',
-          example: 'John Doe',
-        },
-        password: {
-          type: 'string',
-          minLength: 6,
-          example: 'password123',
-        },
-      },
-      required: ['email', 'name', 'password'],
-    },
-  })
-  @ApiResponse({
-    status: 201,
-    description: 'User created successfully',
-    schema: {
-      type: 'object',
-      properties: {
-        id: { type: 'string', example: 'uuid-string' },
-        name: { type: 'string', example: 'John Doe' },
-        token: { type: 'string', example: 'jwt-token-string' },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Bad request - Invalid input data',
-  })
+  @SwaggerSignupEndpoint()
   async signup(@Body() body: any) {
     const parseResult = AuthSignUpRequestSchema.parse(body);
     const response = await this.authService.signup(parseResult);
@@ -61,46 +22,7 @@ export class AuthController {
   }
 
   @Post('signin')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'User login',
-    description: 'Login an existing user with email and password',
-  })
-  @ApiBody({
-    description: 'User login data',
-    schema: {
-      type: 'object',
-      properties: {
-        email: {
-          type: 'string',
-          format: 'email',
-          example: 'user@example.com',
-        },
-        password: {
-          type: 'string',
-          minLength: 6,
-          example: 'password123',
-        },
-      },
-      required: ['email', 'password'],
-    },
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Bad request - Invalid input data',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'User logged on successfully',
-    schema: {
-      type: 'object',
-      properties: {
-        id: { type: 'string', example: 'uuid-string' },
-        name: { type: 'string', example: 'John Doe' },
-        token: { type: 'string', example: 'jwt-token-string' },
-      },
-    },
-  })
+  @SwaggerSigninEndpoint()
   async signin(@Body() body: any) {
     const parseResult = AuthSignInRequestSchema.parse(body);
     const response = await this.authService.signin(parseResult);
