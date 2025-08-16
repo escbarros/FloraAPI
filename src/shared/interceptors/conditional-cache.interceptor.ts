@@ -70,7 +70,7 @@ export class ConditionalCacheInterceptor implements NestInterceptor {
   }
 
   private generateCacheKey(
-    request: Request & { user?: { id: string } },
+    request: Request & { user?: { sub: string } },
     prefix?: string,
   ): string {
     const pathParts = request.url.split('/');
@@ -94,8 +94,8 @@ export class ConditionalCacheInterceptor implements NestInterceptor {
       key += `?${queryString}`;
     }
 
-    if (request.user?.id) {
-      key += `:user:${request.user.id}`;
+    if (request.user?.sub) {
+      key += `:user:${request.user.sub}`;
     }
 
     return key;
