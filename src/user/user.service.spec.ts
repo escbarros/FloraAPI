@@ -14,6 +14,8 @@ describe('UserService', () => {
     favorites: {
       findFirst: jest.fn(),
       create: jest.fn(),
+      findMany: jest.fn(),
+      count: jest.fn(),
     },
   };
 
@@ -205,6 +207,173 @@ describe('UserService', () => {
       mockPrismaService.history.count.mockResolvedValue(totalDocs);
 
       const result = await service.getUserHistory({
+        userId: mockUserId,
+        limit,
+        page,
+      });
+
+      expect(result).toEqual({
+        results: mockExpectedResults,
+        totalDocs: 2,
+        page: 1,
+        totalPages: 1,
+        hasNext: false,
+        hasPrev: false,
+      });
+    });
+  });
+
+  describe('getUserFavorites', () => {
+    it('should return user favorites with pagination on first page', async () => {
+      const limit = 10;
+      const page = 1;
+      const totalDocs = 15;
+
+      mockPrismaService.favorites.findMany.mockResolvedValue(
+        mockHistoryRecords,
+      );
+      mockPrismaService.favorites.count.mockResolvedValue(totalDocs);
+
+      const result = await service.getUserFavorites({
+        userId: mockUserId,
+        limit,
+        page,
+      });
+
+      expect(result).toEqual({
+        results: mockExpectedResults,
+        totalDocs,
+        page,
+        totalPages: 2,
+        hasNext: true,
+        hasPrev: false,
+      });
+
+      expect(mockPrismaService.favorites.findMany).toHaveBeenCalledWith({
+        where: { user_id: mockUserId },
+        select: {
+          word: { select: { word: true } },
+          created_at: true,
+        },
+        skip: 0,
+        take: limit,
+        orderBy: { created_at: 'desc' },
+      });
+
+      expect(mockPrismaService.favorites.count).toHaveBeenCalledWith({
+        where: { user_id: mockUserId },
+      });
+    });
+
+    it('should return user favorites with pagination on second page', async () => {
+      const limit = 5;
+      const page = 2;
+      const totalDocs = 12;
+
+      mockPrismaService.favorites.findMany.mockResolvedValue(
+        mockHistoryRecords,
+      );
+      mockPrismaService.favorites.count.mockResolvedValue(totalDocs);
+
+      const result = await service.getUserFavorites({
+        userId: mockUserId,
+        limit,
+        page,
+      });
+
+      expect(result).toEqual({
+        results: mockExpectedResults,
+        totalDocs,
+        page,
+        totalPages: 3,
+        hasNext: true,
+        hasPrev: true,
+      });
+
+      expect(mockPrismaService.favorites.findMany).toHaveBeenCalledWith({
+        where: { user_id: mockUserId },
+        select: {
+          word: { select: { word: true } },
+          created_at: true,
+        },
+        skip: 5,
+        take: limit,
+        orderBy: { created_at: 'desc' },
+      });
+    });
+
+    it('should return user favorites on last page', async () => {
+      const limit = 10;
+      const page = 3;
+      const totalDocs = 25;
+
+      mockPrismaService.favorites.findMany.mockResolvedValue(
+        mockHistoryRecords,
+      );
+      mockPrismaService.favorites.count.mockResolvedValue(totalDocs);
+
+      const result = await service.getUserFavorites({
+        userId: mockUserId,
+        limit,
+        page,
+      });
+
+      expect(result).toEqual({
+        results: mockExpectedResults,
+        totalDocs,
+        page,
+        totalPages: 3,
+        hasNext: false,
+        hasPrev: true,
+      });
+
+      expect(mockPrismaService.favorites.findMany).toHaveBeenCalledWith({
+        where: { user_id: mockUserId },
+        select: {
+          word: { select: { word: true } },
+          created_at: true,
+        },
+        skip: 20,
+        take: limit,
+        orderBy: { created_at: 'desc' },
+      });
+    });
+
+    it('should return empty favorites when user has no records', async () => {
+      const limit = 10;
+      const page = 1;
+      const totalDocs = 0;
+
+      mockPrismaService.favorites.findMany.mockResolvedValue([]);
+      mockPrismaService.favorites.count.mockResolvedValue(totalDocs);
+
+      const result = await service.getUserFavorites({
+        userId: mockUserId,
+        limit,
+        page,
+      });
+
+      expect(result).toEqual({
+        results: [],
+        totalDocs: 0,
+        page: 1,
+        totalPages: 0,
+        hasNext: false,
+        hasPrev: false,
+      });
+    });
+
+    it('should handle single page results for favorites', async () => {
+      const limit = 10;
+      const page = 1;
+      const totalDocs = 2;
+
+      mockPrismaService.favorites.findMany.mockResolvedValue(
+        mockHistoryRecords,
+      );
+      mockPrismaService.favorites.count.mockResolvedValue(totalDocs);
+
+      const result = await service.getUserFavorites({
         userId: mockUserId,
         limit,
         page,

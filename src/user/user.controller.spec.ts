@@ -9,6 +9,7 @@ describe('UserController', () => {
 
   const mockUserService = {
     getUserHistory: jest.fn(),
+    getUserFavorites: jest.fn(),
   };
 
   const mockJwtGuard = {
@@ -146,6 +147,81 @@ describe('UserController', () => {
       await controller.getUserHistory(differentUserRequest, '5', '2');
 
       expect(mockUserService.getUserHistory).toHaveBeenCalledWith({
+        userId: '650e8400-e29b-41d4-a716-446655440001',
+        limit: 5,
+        page: 2,
+      });
+    });
+  });
+
+  describe('getUserFavorites', () => {
+    it('should return user favorites with default pagination', async () => {
+      mockUserService.getUserFavorites.mockResolvedValue(mockHistoryResponse);
+
+      const result = await controller.getUserFavorites(mockRequest);
+
+      expect(result).toEqual(mockHistoryResponse);
+      expect(mockUserService.getUserFavorites).toHaveBeenCalledWith({
+        userId: '550e8400-e29b-41d4-a716-446655440000',
+        limit: 10,
+        page: 1,
+      });
+    });
+
+    it('should return user favorites with custom pagination', async () => {
+      const customResponse = {
+        ...mockHistoryResponse,
+        page: 2,
+        hasPrev: true,
+      };
+
+      mockUserService.getUserFavorites.mockResolvedValue(customResponse);
+
+      const result = await controller.getUserFavorites(mockRequest, '5', '2');
+
+      expect(result).toEqual(customResponse);
+      expect(mockUserService.getUserFavorites).toHaveBeenCalledWith({
+        userId: '550e8400-e29b-41d4-a716-446655440000',
+        limit: 5,
+        page: 2,
+      });
+    });
+
+    it('should handle empty favorites', async () => {
+      const emptyResponse = {
+        results: [],
+        totalDocs: 0,
+        page: 1,
+        totalPages: 0,
+        hasNext: false,
+        hasPrev: false,
+      };
+
+      mockUserService.getUserFavorites.mockResolvedValue(emptyResponse);
+
+      const result = await controller.getUserFavorites(mockRequest);
+
+      expect(result).toEqual(emptyResponse);
+      expect(mockUserService.getUserFavorites).toHaveBeenCalledWith({
+        userId: '550e8400-e29b-41d4-a716-446655440000',
+        limit: 10,
+        page: 1,
+      });
+    });
+
+    it('should pass through user ID from JWT token for favorites', async () => {
+      const differentUserRequest = {
+        user: {
+          sub: '650e8400-e29b-41d4-a716-446655440001',
+          email: 'other@test.com',
+        },
+      } as RequestWithUser;
+
+      mockUserService.getUserFavorites.mockResolvedValue(mockHistoryResponse);
+
+      await controller.getUserFavorites(differentUserRequest, '5', '2');
+
+      expect(mockUserService.getUserFavorites).toHaveBeenCalledWith({
         userId: '650e8400-e29b-41d4-a716-446655440001',
         limit: 5,
         page: 2,
