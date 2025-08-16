@@ -13,6 +13,7 @@ describe('EntriesService', () => {
     words: {
       findMany: jest.fn(),
       count: jest.fn(),
+      findUnique: jest.fn(),
     },
   };
 
@@ -411,6 +412,55 @@ describe('EntriesService', () => {
       expect(mockHttpService.get).toHaveBeenCalledWith(
         'https://api.dictionaryapi.dev/api/v2/entries/en/test',
       );
+    });
+  });
+
+  describe('getWordId', () => {
+    it('should return word id when word exists', async () => {
+      const word = 'fire';
+      const mockWordEntry = {
+        id: 'word-123',
+      };
+
+      mockPrismaService.words.findUnique.mockResolvedValue(mockWordEntry);
+
+      const result = await service.getWordId(word);
+
+      expect(result).toBe('word-123');
+      expect(mockPrismaService.words.findUnique).toHaveBeenCalledWith({
+        where: { word },
+        select: { id: true },
+      });
+    });
+
+    it('should throw NotFoundException when word does not exist', async () => {
+      const word = 'nonexistentword';
+
+      mockPrismaService.words.findUnique.mockResolvedValue(null);
+
+      await expect(service.getWordId(word)).rejects.toThrow(NotFoundException);
+      await expect(service.getWordId(word)).rejects.toThrow(
+        `Word not found: ${word}`,
+      );
+
+      expect(mockPrismaService.words.findUnique).toHaveBeenCalledWith({
+        where: { word },
+        select: { id: true },
+      });
+    });
+
+    it('should handle empty string word', async () => {
+      const word = '';
+
+      mockPrismaService.words.findUnique.mockResolvedValue(null);
+
+      await expect(service.getWordId(word)).rejects.toThrow(NotFoundException);
+      await expect(service.getWordId(word)).rejects.toThrow('Word not found: ');
+
+      expect(mockPrismaService.words.findUnique).toHaveBeenCalledWith({
+        where: { word },
+        select: { id: true },
+      });
     });
   });
 });

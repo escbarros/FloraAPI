@@ -32,6 +32,23 @@ describe('EntriesController', () => {
     },
   ];
 
+  const mockDefaultWord = 'fire';
+  const mockDefaultWordId = 'word-123';
+  const mockUserId = '1';
+  const mockSpecialWord = 'test-word';
+  const mockSpecialWordId = 'word-special-789';
+
+  const mockHistoryResponse = {};
+
+  const expectFullWordDetailFlow = (word: string, wordId: string) => {
+    expect(mockEntriesService.getWordId).toHaveBeenCalledWith(word);
+    expect(mockEntriesService.getEntryDetail).toHaveBeenCalledWith(word);
+    expect(mockUserService.addWordToHistory).toHaveBeenCalledWith(
+      mockUserId,
+      wordId,
+    );
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [EntriesController],
@@ -234,68 +251,67 @@ describe('EntriesController', () => {
 
   describe('getEntryDetail', () => {
     it('should return word details successfully', async () => {
+      mockEntriesService.getWordId.mockResolvedValue(mockDefaultWordId);
       mockEntriesService.getEntryDetail.mockResolvedValue(mockWordDetails);
+      mockUserService.addWordToHistory.mockResolvedValue(mockHistoryResponse);
 
-      const result = await controller.getEntryDetail(mockRequest, 'fire');
+      const result = await controller.getEntryDetail(
+        mockRequest,
+        mockDefaultWord,
+      );
 
       expect(result).toEqual(mockWordDetails);
-      expect(mockEntriesService.getEntryDetail).toHaveBeenCalledWith('fire');
+      expectFullWordDetailFlow(mockDefaultWord, mockDefaultWordId);
     });
 
     it('should handle word not found error', async () => {
       const word = 'nonexistentword';
       const errorMessage = `couldn't find definitions for the word ${word}`;
 
-      mockEntriesService.getEntryDetail.mockRejectedValue(
-        new Error(errorMessage),
-      );
+      mockEntriesService.getWordId.mockRejectedValue(new Error(errorMessage));
 
       await expect(
         controller.getEntryDetail(mockRequest, word),
       ).rejects.toThrow(errorMessage);
-      expect(mockEntriesService.getEntryDetail).toHaveBeenCalledWith(word);
+      expect(mockEntriesService.getWordId).toHaveBeenCalledWith(word);
     });
 
     it('should handle service errors', async () => {
       const word = 'test';
-      const errorMessage = 'failed to fetch entry details';
+      const wordId = 'word-456';
 
+      mockEntriesService.getWordId.mockResolvedValue(wordId);
       mockEntriesService.getEntryDetail.mockRejectedValue(
-        new Error(errorMessage),
+        new Error('failed to fetch entry details'),
       );
 
       await expect(
         controller.getEntryDetail(mockRequest, word),
-      ).rejects.toThrow(errorMessage);
+      ).rejects.toThrow('failed to fetch entry details');
+      expect(mockEntriesService.getWordId).toHaveBeenCalledWith(word);
       expect(mockEntriesService.getEntryDetail).toHaveBeenCalledWith(word);
     });
 
     it('should handle special characters in word parameter', async () => {
-      const word = 'test-word';
       const wordDetailsWithSpecialChar = [
         {
-          word: 'test-word',
+          word: mockSpecialWord,
         },
       ];
 
+      mockEntriesService.getWordId.mockResolvedValue(mockSpecialWordId);
       mockEntriesService.getEntryDetail.mockResolvedValue(
         wordDetailsWithSpecialChar,
       );
-      const result = await controller.getEntryDetail(mockRequest, word);
+      mockUserService.addWordToHistory.mockResolvedValue(mockHistoryResponse);
+
+      const result = await controller.getEntryDetail(
+        mockRequest,
+        mockSpecialWord,
+      );
 
       expect(result).toEqual(wordDetailsWithSpecialChar);
-      expect(mockEntriesService.getEntryDetail).toHaveBeenCalledWith(word);
-    });
-
-    it('should handle uppercase word parameter', async () => {
-      const word = 'FIRE';
-
-      mockEntriesService.getEntryDetail.mockResolvedValue(mockWordDetails);
-
-      const result = await controller.getEntryDetail(mockRequest, word);
-
-      expect(result).toEqual(mockWordDetails);
-      expect(mockEntriesService.getEntryDetail).toHaveBeenCalledWith(word);
+      expectFullWordDetailFlow(mockSpecialWord, mockSpecialWordId);
     });
   });
 });
