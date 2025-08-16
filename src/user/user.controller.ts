@@ -6,6 +6,7 @@ import { UserService } from './user.service';
 import { UserListPaginationRequestSchema } from './dto/user-list-pagination-request-dto';
 import { SwaggerUserHistoryEndpoint } from './decorators/swagger-user-history-endpoint.decorator';
 import { SwaggerUserFavoritesEndpoint } from './decorators/swagger-user-favorites-endpoint.decorator';
+import { SwaggerUserProfileEndpoint } from './decorators/swagger-user-profile-endpoint.decorator';
 
 @ApiTags('User')
 @ApiBearerAuth('JWT-auth')
@@ -13,6 +14,15 @@ import { SwaggerUserFavoritesEndpoint } from './decorators/swagger-user-favorite
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
+
+  @Get('/me')
+  @SwaggerUserProfileEndpoint()
+  async getUserProfile(@Request() req: RequestWithUser) {
+    const { sub: userId } = req.user;
+    const userProfile = await this.userService.getUserProfile(userId);
+    return userProfile;
+  }
+
   @Get('/me/history')
   @SwaggerUserHistoryEndpoint()
   async getUserHistory(
