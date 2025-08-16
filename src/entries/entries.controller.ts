@@ -1,4 +1,11 @@
-import { Controller, Get, Query, Request, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  Query,
+  Request,
+  UseGuards,
+} from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -63,7 +70,6 @@ export class EntriesController {
     },
   })
   async getEntries(
-    @Request() req: RequestWithUser,
     @Query('search') search?: string,
     @Query('limit') limit?: string,
     @Query('page') page?: string,
@@ -73,7 +79,16 @@ export class EntriesController {
       limit,
       page,
     });
-    const result = await this.entryService.getEntries(parseResult);
-    return result;
+    const queryEntries = await this.entryService.getEntries(parseResult);
+    return queryEntries;
+  }
+
+  @Get('en/:word')
+  async getEntryDetail(
+    @Request() req: RequestWithUser,
+    @Param('word') word: string,
+  ) {
+    const wordDetails = await this.entryService.getEntryDetail(word);
+    return wordDetails;
   }
 }

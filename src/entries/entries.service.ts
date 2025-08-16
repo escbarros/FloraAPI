@@ -1,11 +1,19 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { EntryQuerySearchRequestDto } from './dto/entry-query-search-request-dto';
 import { EntryQuerySearchResponseDto } from './dto/entry-query-search-response-dto';
 import { PrismaService } from '../shared/prisma.service';
+import { HttpService } from '@nestjs/axios';
+import { AxiosError } from 'axios';
+import { firstValueFrom } from 'rxjs';
+import { EntryWordDetailFoundResponseDto } from './dto/entry-word-detail-found-response-dto';
 
 @Injectable()
 export class EntriesService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly baseUrl = 'https://api.dictionaryapi.dev/api/v2/entries/en/';
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly httpService: HttpService,
+  ) {}
 
   async getEntries(
     query: EntryQuerySearchRequestDto,
@@ -49,5 +57,23 @@ export class EntriesService {
       hasNext,
       hasPrev,
     };
+  }
+
+  async getEntryDetail(word: string): Promise<EntryWordDetailFoundResponseDto> {
+    try {
+      const response = await firstValueFrom(
+        this.httpService.get(`${this.baseUrl}${word}`),
+      );
+
+      return response.data as EntryWordDetailFoundResponseDto;
+    } catch (err: unknown) {
+      if (err instanceof AxiosError && err.response?.status == 404) {
+        throw new NotFoundException(
+          `couldn't find definitions for the word ${word}`,
+        );
+      }
+
+      throw new Error('failed to fetch entry details');
+    }
   }
 }

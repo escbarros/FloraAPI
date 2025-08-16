@@ -2,9 +2,10 @@ import { Module } from '@nestjs/common';
 import { EntriesService } from './entries.service';
 import { EntriesController } from './entries.controller';
 import { PrismaModule } from 'src/shared/prisma.module';
+import { HttpModule } from '@nestjs/axios';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, HttpModule],
   providers: [EntriesService],
   controllers: [EntriesController],
   exports: [EntriesService],

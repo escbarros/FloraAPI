@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { EntriesController } from './entries.controller';
 import { EntriesService } from './entries.service';
 import { JwtGuard } from '../shared/middleware/jwt.guard';
-import type { RequestWithUser } from '../shared/types/JwtRequest';
+// import type { RequestWithUser } from '../shared/types/JwtRequest';
 
 describe('EntriesController', () => {
   let controller: EntriesController;
@@ -53,11 +53,7 @@ describe('EntriesController', () => {
 
       mockEntriesService.getEntries.mockResolvedValue(mockResponse);
 
-      const mockRequest = {
-        user: { sub: '1', email: 'test@example.com' },
-      } as unknown as RequestWithUser;
-
-      const result = await controller.getEntries(mockRequest, 'fire', '3', '1');
+      const result = await controller.getEntries('fire', '3', '1');
 
       expect(result).toEqual(mockResponse);
       expect(mockEntriesService.getEntries).toHaveBeenCalledWith({
@@ -79,11 +75,7 @@ describe('EntriesController', () => {
 
       mockEntriesService.getEntries.mockResolvedValue(mockResponse);
 
-      const mockRequest = {
-        user: { sub: '1', email: 'test@example.com' },
-      } as RequestWithUser;
-
-      const result = await controller.getEntries(mockRequest, 'fire', '3', '2');
+      const result = await controller.getEntries('fire', '3', '2');
 
       expect(result).toEqual(mockResponse);
       expect(mockEntriesService.getEntries).toHaveBeenCalledWith({
@@ -105,16 +97,7 @@ describe('EntriesController', () => {
 
       mockEntriesService.getEntries.mockResolvedValue(mockResponse);
 
-      const mockRequest = {
-        user: { sub: '1', email: 'test@example.com' },
-      } as RequestWithUser;
-
-      const result = await controller.getEntries(
-        mockRequest,
-        'NONEXISTENT',
-        '10',
-        '1',
-      );
+      const result = await controller.getEntries('NONEXISTENT', '10', '1');
 
       expect(result).toEqual(mockResponse);
       expect(mockEntriesService.getEntries).toHaveBeenCalledWith({
@@ -136,16 +119,7 @@ describe('EntriesController', () => {
 
       mockEntriesService.getEntries.mockResolvedValue(mockResponse);
 
-      const mockRequest = {
-        user: { sub: '1', email: 'test@example.com' },
-      } as RequestWithUser;
-
-      const result = await controller.getEntries(
-        mockRequest,
-        undefined,
-        '10',
-        '1',
-      );
+      const result = await controller.getEntries(undefined, '10', '1');
 
       expect(result).toEqual(mockResponse);
       expect(mockEntriesService.getEntries).toHaveBeenCalledWith({
@@ -167,11 +141,7 @@ describe('EntriesController', () => {
 
       mockEntriesService.getEntries.mockResolvedValue(mockResponse);
 
-      const mockRequest = {
-        user: { sub: '1', email: 'test@example.com' },
-      } as RequestWithUser;
-
-      const result = await controller.getEntries(mockRequest);
+      const result = await controller.getEntries();
 
       expect(result).toEqual(mockResponse);
       expect(mockEntriesService.getEntries).toHaveBeenCalledWith({
@@ -193,11 +163,7 @@ describe('EntriesController', () => {
 
       mockEntriesService.getEntries.mockResolvedValue(mockResponse);
 
-      const mockRequest = {
-        user: { sub: '1', email: 'test@example.com' },
-      } as RequestWithUser;
-
-      const result = await controller.getEntries(mockRequest, 'fire', '3', '4');
+      const result = await controller.getEntries('fire', '3', '4');
 
       expect(result).toEqual(mockResponse);
       expect(mockEntriesService.getEntries).toHaveBeenCalledWith({
@@ -219,16 +185,7 @@ describe('EntriesController', () => {
 
       mockEntriesService.getEntries.mockResolvedValue(mockResponse);
 
-      const mockRequest = {
-        user: { sub: '1', email: 'test@example.com' },
-      } as RequestWithUser;
-
-      const result = await controller.getEntries(
-        mockRequest,
-        'FIRE',
-        '10',
-        '1',
-      );
+      const result = await controller.getEntries('FIRE', '10', '1');
 
       expect(result).toEqual(mockResponse);
       expect(mockEntriesService.getEntries).toHaveBeenCalledWith({
@@ -242,13 +199,9 @@ describe('EntriesController', () => {
       const errorMessage = 'Database connection failed';
       mockEntriesService.getEntries.mockRejectedValue(new Error(errorMessage));
 
-      const mockRequest = {
-        user: { sub: '1', email: 'test@example.com' },
-      } as RequestWithUser;
-
-      await expect(
-        controller.getEntries(mockRequest, 'fire', '3', '1'),
-      ).rejects.toThrow(errorMessage);
+      await expect(controller.getEntries('fire', '3', '1')).rejects.toThrow(
+        errorMessage,
+      );
 
       expect(mockEntriesService.getEntries).toHaveBeenCalledWith({
         search: 'fire',

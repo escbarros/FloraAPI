@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { EntriesService } from './entries.service';
 import { PrismaService } from '../shared/prisma.service';
+import { HttpService } from '@nestjs/axios';
 
 describe('EntriesService', () => {
   let service: EntriesService;
@@ -12,6 +13,10 @@ describe('EntriesService', () => {
     },
   };
 
+  const mockHttpService = {
+    get: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -19,6 +24,10 @@ describe('EntriesService', () => {
         {
           provide: PrismaService,
           useValue: mockPrismaService,
+        },
+        {
+          provide: HttpService,
+          useValue: mockHttpService,
         },
       ],
     }).compile();
