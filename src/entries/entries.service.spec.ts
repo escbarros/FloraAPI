@@ -21,6 +21,7 @@ describe('EntriesService', () => {
     favorites: {
       create: jest.fn(),
       findFirst: jest.fn(),
+      delete: jest.fn(),
     },
   };
 
@@ -686,6 +687,47 @@ describe('EntriesService', () => {
           word_id: specialWordId,
         },
       });
+    });
+  });
+
+  describe('removeWordFromFavorites', () => {
+    it('should remove favorite successfully when it exists', async () => {
+      const existingFavorite = {
+        id: 'favorite-to-delete-123',
+        user_id: mockUserId,
+        word_id: mockWordId,
+        created_at: new Date('2025-01-01T00:00:00.000Z'),
+      };
+
+      mockPrismaService.favorites.findFirst.mockResolvedValue(existingFavorite);
+      mockPrismaService.favorites.delete.mockResolvedValue(existingFavorite);
+
+      await service.removeWordFromFavorites(mockUserId, mockWordId);
+
+      expect(mockPrismaService.favorites.findFirst).toHaveBeenCalledWith(
+        expectedFindFirstCall,
+      );
+      expect(mockPrismaService.favorites.delete).toHaveBeenCalledWith({
+        where: {
+          id: existingFavorite.id,
+        },
+      });
+    });
+
+    it('should throw NotFoundException when favorite does not exist', async () => {
+      mockPrismaService.favorites.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.removeWordFromFavorites(mockUserId, mockWordId),
+      ).rejects.toThrow(NotFoundException);
+      await expect(
+        service.removeWordFromFavorites(mockUserId, mockWordId),
+      ).rejects.toThrow('user has not set word as its favorite');
+
+      expect(mockPrismaService.favorites.findFirst).toHaveBeenCalledWith(
+        expectedFindFirstCall,
+      );
+      expect(mockPrismaService.favorites.delete).not.toHaveBeenCalled();
     });
   });
 });

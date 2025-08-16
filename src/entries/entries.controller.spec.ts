@@ -14,6 +14,7 @@ describe('EntriesController', () => {
     getWordId: jest.fn(),
     addWordToHistory: jest.fn(),
     addWordToFavorites: jest.fn(),
+    removeWordFromFavorites: jest.fn(),
   };
 
   const mockJwtGuard = {
@@ -388,6 +389,56 @@ describe('EntriesController', () => {
       ).rejects.toThrow(errorMessage);
       expect(mockEntriesService.getWordId).toHaveBeenCalledWith(word);
       expect(mockEntriesService.addWordToFavorites).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('removeWordFromFavorites', () => {
+    it('should remove word from favorites successfully', async () => {
+      mockEntriesService.getWordId.mockResolvedValue(mockDefaultWordId);
+      mockEntriesService.removeWordFromFavorites.mockResolvedValue(undefined);
+
+      await controller.removeWordFromFavorites(mockRequest, mockDefaultWord);
+
+      expect(mockEntriesService.getWordId).toHaveBeenCalledWith(
+        mockDefaultWord,
+      );
+      expect(mockEntriesService.removeWordFromFavorites).toHaveBeenCalledWith(
+        mockUserId,
+        mockDefaultWordId,
+      );
+    });
+
+    it('should handle word not found error when removing from favorites', async () => {
+      const word = 'nonexistentword';
+      const errorMessage = `Word not found: ${word}`;
+
+      mockEntriesService.getWordId.mockRejectedValue(new Error(errorMessage));
+
+      await expect(
+        controller.removeWordFromFavorites(mockRequest, word),
+      ).rejects.toThrow(errorMessage);
+      expect(mockEntriesService.getWordId).toHaveBeenCalledWith(word);
+      expect(mockEntriesService.removeWordFromFavorites).not.toHaveBeenCalled();
+    });
+
+    it('should handle favorite not found error', async () => {
+      const errorMessage = 'user has not set word as its favorite';
+
+      mockEntriesService.getWordId.mockResolvedValue(mockDefaultWordId);
+      mockEntriesService.removeWordFromFavorites.mockRejectedValue(
+        new Error(errorMessage),
+      );
+
+      await expect(
+        controller.removeWordFromFavorites(mockRequest, mockDefaultWord),
+      ).rejects.toThrow(errorMessage);
+      expect(mockEntriesService.getWordId).toHaveBeenCalledWith(
+        mockDefaultWord,
+      );
+      expect(mockEntriesService.removeWordFromFavorites).toHaveBeenCalledWith(
+        mockUserId,
+        mockDefaultWordId,
+      );
     });
   });
 });
