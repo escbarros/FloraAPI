@@ -2,6 +2,9 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { EntriesService } from './entries.service';
 import { PrismaService } from '../shared/prisma.service';
 import { HttpService } from '@nestjs/axios';
+import { NotFoundException } from '@nestjs/common';
+import { AxiosError, AxiosResponse } from 'axios';
+import { of, throwError } from 'rxjs';
 
 describe('EntriesService', () => {
   let service: EntriesService;
@@ -15,6 +18,16 @@ describe('EntriesService', () => {
 
   const mockHttpService = {
     get: jest.fn(),
+  };
+
+  const mockWordDetails = [
+    {
+      word: 'fire',
+    },
+  ];
+
+  const mockResponse = {
+    data: mockWordDetails,
   };
 
   beforeEach(async () => {
@@ -282,6 +295,122 @@ describe('EntriesService', () => {
           word: true,
         },
       });
+    });
+  });
+
+  describe('getEntryDetail', () => {
+    it('should return word details successfully', async () => {
+      mockHttpService.get.mockReturnValue(of(mockResponse));
+
+      const result = await service.getEntryDetail('fire');
+
+      expect(result).toEqual(mockWordDetails);
+      expect(mockHttpService.get).toHaveBeenCalledWith(
+        'https://api.dictionaryapi.dev/api/v2/entries/en/fire',
+      );
+    });
+
+    it('should throw NotFoundException when word is not found', async () => {
+      const axiosError = new AxiosError('Not Found');
+      axiosError.response = { status: 404 } as AxiosResponse;
+
+      mockHttpService.get.mockReturnValue(throwError(() => axiosError));
+
+      await expect(service.getEntryDetail('nonexistentword')).rejects.toThrow(
+        NotFoundException,
+      );
+      await expect(service.getEntryDetail('nonexistentword')).rejects.toThrow(
+        `couldn't find definitions for the word nonexistentword`,
+      );
+
+      expect(mockHttpService.get).toHaveBeenCalledWith(
+        'https://api.dictionaryapi.dev/api/v2/entries/en/nonexistentword',
+      );
+    });
+
+    it('should throw generic error for other HTTP errors', async () => {
+      const axiosError = new AxiosError('Internal Server Error');
+      axiosError.response = { status: 500 } as AxiosResponse;
+
+      mockHttpService.get.mockReturnValue(throwError(() => axiosError));
+
+      await expect(service.getEntryDetail('test')).rejects.toThrow(
+        'failed to fetch entry details',
+      );
+
+      expect(mockHttpService.get).toHaveBeenCalledWith(
+        'https://api.dictionaryapi.dev/api/v2/entries/en/test',
+      );
+    });
+
+    it('should throw generic error for non-Axios errors', async () => {
+      const genericError = new Error('Network error');
+
+      mockHttpService.get.mockReturnValue(throwError(() => genericError));
+
+      await expect(service.getEntryDetail('test')).rejects.toThrow(
+        'failed to fetch entry details',
+      );
+
+      expect(mockHttpService.get).toHaveBeenCalledWith(
+        'https://api.dictionaryapi.dev/api/v2/entries/en/test',
+      );
+    });
+
+    it('should handle word with special characters', async () => {
+      const mockWordDetailsWithSpecialChar = [
+        {
+          word: 'one-word',
+        },
+      ];
+
+      const mockResponseWithSpecialChar = {
+        data: mockWordDetailsWithSpecialChar,
+      };
+
+      mockHttpService.get.mockReturnValue(of(mockResponseWithSpecialChar));
+
+      const result = await service.getEntryDetail('one-word');
+
+      expect(result).toEqual(mockWordDetailsWithSpecialChar);
+      expect(mockHttpService.get).toHaveBeenCalledWith(
+        'https://api.dictionaryapi.dev/api/v2/entries/en/one-word',
+      );
+    });
+
+    it('should handle uppercase word', async () => {
+      const mockWordDetails = [
+        {
+          word: 'FIRE',
+        },
+      ];
+
+      const mockResponse = {
+        data: mockWordDetails,
+      };
+
+      mockHttpService.get.mockReturnValue(of(mockResponse));
+
+      const result = await service.getEntryDetail('FIRE');
+
+      expect(result).toEqual(mockWordDetails);
+      expect(mockHttpService.get).toHaveBeenCalledWith(
+        'https://api.dictionaryapi.dev/api/v2/entries/en/FIRE',
+      );
+    });
+
+    it('should handle AxiosError without response', async () => {
+      const axiosError = new AxiosError('Network Error');
+
+      mockHttpService.get.mockReturnValue(throwError(() => axiosError));
+
+      await expect(service.getEntryDetail('test')).rejects.toThrow(
+        'failed to fetch entry details',
+      );
+
+      expect(mockHttpService.get).toHaveBeenCalledWith(
+        'https://api.dictionaryapi.dev/api/v2/entries/en/test',
+      );
     });
   });
 });

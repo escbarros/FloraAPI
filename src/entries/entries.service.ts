@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import { EntryQuerySearchRequestDto } from './dto/entry-query-search-request-dto';
 import { EntryQuerySearchResponseDto } from './dto/entry-query-search-response-dto';
 import { PrismaService } from '../shared/prisma.service';
@@ -67,7 +67,10 @@ export class EntriesService {
 
       return response.data as EntryWordDetailFoundResponseDto;
     } catch (err: unknown) {
-      if (err instanceof AxiosError && err.response?.status == 404) {
+      if (
+        err instanceof AxiosError &&
+        err.response?.status === HttpStatus.NOT_FOUND
+      ) {
         throw new NotFoundException(
           `couldn't find definitions for the word ${word}`,
         );

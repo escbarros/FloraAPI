@@ -2,18 +2,29 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { EntriesController } from './entries.controller';
 import { EntriesService } from './entries.service';
 import { JwtGuard } from '../shared/middleware/jwt.guard';
-// import type { RequestWithUser } from '../shared/types/JwtRequest';
+import type { RequestWithUser } from '../shared/types/JwtRequest';
 
 describe('EntriesController', () => {
   let controller: EntriesController;
 
   const mockEntriesService = {
     getEntries: jest.fn(),
+    getEntryDetail: jest.fn(),
   };
 
   const mockJwtGuard = {
     canActivate: jest.fn().mockReturnValue(true),
   };
+
+  const mockRequest = {
+    user: { sub: '1', email: 'test@test.com' },
+  } as RequestWithUser;
+
+  const mockWordDetails = [
+    {
+      word: 'fire',
+    },
+  ];
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -208,6 +219,73 @@ describe('EntriesController', () => {
         limit: 3,
         page: 1,
       });
+    });
+  });
+
+  describe('getEntryDetail', () => {
+    it('should return word details successfully', async () => {
+      mockEntriesService.getEntryDetail.mockResolvedValue(mockWordDetails);
+
+      const result = await controller.getEntryDetail(mockRequest, 'fire');
+
+      expect(result).toEqual(mockWordDetails);
+      expect(mockEntriesService.getEntryDetail).toHaveBeenCalledWith('fire');
+    });
+
+    it('should handle word not found error', async () => {
+      const word = 'nonexistentword';
+      const errorMessage = `couldn't find definitions for the word ${word}`;
+
+      mockEntriesService.getEntryDetail.mockRejectedValue(
+        new Error(errorMessage),
+      );
+
+      await expect(
+        controller.getEntryDetail(mockRequest, word),
+      ).rejects.toThrow(errorMessage);
+      expect(mockEntriesService.getEntryDetail).toHaveBeenCalledWith(word);
+    });
+
+    it('should handle service errors', async () => {
+      const word = 'test';
+      const errorMessage = 'failed to fetch entry details';
+
+      mockEntriesService.getEntryDetail.mockRejectedValue(
+        new Error(errorMessage),
+      );
+
+      await expect(
+        controller.getEntryDetail(mockRequest, word),
+      ).rejects.toThrow(errorMessage);
+      expect(mockEntriesService.getEntryDetail).toHaveBeenCalledWith(word);
+    });
+
+    it('should handle special characters in word parameter', async () => {
+      const word = 'test-word';
+      const wordDetailsWithSpecialChar = [
+        {
+          word: 'test-word',
+        },
+      ];
+
+      mockEntriesService.getEntryDetail.mockResolvedValue(
+        wordDetailsWithSpecialChar,
+      );
+      const result = await controller.getEntryDetail(mockRequest, word);
+
+      expect(result).toEqual(wordDetailsWithSpecialChar);
+      expect(mockEntriesService.getEntryDetail).toHaveBeenCalledWith(word);
+    });
+
+    it('should handle uppercase word parameter', async () => {
+      const word = 'FIRE';
+
+      mockEntriesService.getEntryDetail.mockResolvedValue(mockWordDetails);
+
+      const result = await controller.getEntryDetail(mockRequest, word);
+
+      expect(result).toEqual(mockWordDetails);
+      expect(mockEntriesService.getEntryDetail).toHaveBeenCalledWith(word);
     });
   });
 });
