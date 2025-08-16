@@ -8,6 +8,7 @@ describe('UserController', () => {
   let controller: UserController;
 
   const mockUserService = {
+    getUserProfile: jest.fn(),
     getUserHistory: jest.fn(),
     getUserFavorites: jest.fn(),
   };
@@ -64,6 +65,62 @@ describe('UserController', () => {
 
   it('should be defined', () => {
     expect(controller).toBeDefined();
+  });
+
+  describe('getUserProfile', () => {
+    it('should return user profile successfully', async () => {
+      const mockProfile = {
+        id: '550e8400-e29b-41d4-a716-446655440000',
+        email: 'test@test.com',
+        name: 'Test User',
+      };
+
+      mockUserService.getUserProfile.mockResolvedValue(mockProfile);
+
+      const result = await controller.getUserProfile(mockRequest);
+
+      expect(result).toEqual(mockProfile);
+      expect(mockUserService.getUserProfile).toHaveBeenCalledWith(
+        '550e8400-e29b-41d4-a716-446655440000',
+      );
+    });
+
+    it('should handle user not found error', async () => {
+      const errorMessage = 'User not found';
+      mockUserService.getUserProfile.mockRejectedValue(new Error(errorMessage));
+
+      await expect(controller.getUserProfile(mockRequest)).rejects.toThrow(
+        errorMessage,
+      );
+
+      expect(mockUserService.getUserProfile).toHaveBeenCalledWith(
+        '550e8400-e29b-41d4-a716-446655440000',
+      );
+    });
+
+    it('should pass through user ID from JWT token for profile', async () => {
+      const differentUserRequest = {
+        user: {
+          sub: '650e8400-e29b-41d4-a716-446655440001',
+          email: 'other@test.com',
+        },
+      } as RequestWithUser;
+
+      const mockProfile = {
+        id: '650e8400-e29b-41d4-a716-446655440001',
+        email: 'other@test.com',
+        name: 'Other User',
+      };
+
+      mockUserService.getUserProfile.mockResolvedValue(mockProfile);
+
+      const result = await controller.getUserProfile(differentUserRequest);
+
+      expect(result).toEqual(mockProfile);
+      expect(mockUserService.getUserProfile).toHaveBeenCalledWith(
+        '650e8400-e29b-41d4-a716-446655440001',
+      );
+    });
   });
 
   describe('getUserHistory', () => {

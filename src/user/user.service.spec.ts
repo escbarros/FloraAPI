@@ -6,6 +6,9 @@ describe('UserService', () => {
   let service: UserService;
 
   const mockPrismaService = {
+    user: {
+      findUnique: jest.fn(),
+    },
     history: {
       findMany: jest.fn(),
       count: jest.fn(),
@@ -62,6 +65,47 @@ describe('UserService', () => {
 
   it('should be defined', () => {
     expect(service).toBeDefined();
+  });
+
+  describe('getUserProfile', () => {
+    it('should return user profile when user exists', async () => {
+      const mockUser = {
+        id: mockUserId,
+        email: 'test@example.com',
+        name: 'Test User',
+      };
+
+      mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
+
+      const result = await service.getUserProfile(mockUserId);
+
+      expect(result).toEqual(mockUser);
+      expect(mockPrismaService.user.findUnique).toHaveBeenCalledWith({
+        where: { id: mockUserId },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+        },
+      });
+    });
+
+    it('should throw NotFoundException when user does not exist', async () => {
+      mockPrismaService.user.findUnique.mockResolvedValue(null);
+
+      await expect(service.getUserProfile(mockUserId)).rejects.toThrow(
+        'User not found',
+      );
+
+      expect(mockPrismaService.user.findUnique).toHaveBeenCalledWith({
+        where: { id: mockUserId },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+        },
+      });
+    });
   });
 
   describe('getUserHistory', () => {
