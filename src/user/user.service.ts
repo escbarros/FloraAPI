@@ -1,38 +1,59 @@
 import { Injectable } from '@nestjs/common';
-import { History } from '@prisma/client';
 import { PrismaService } from '../shared/prisma.service';
-import { Favorites } from '@prisma/client';
+import { UserHistoryRequestDto } from './dto/user-history-request-dto';
+import { UserHistoryResponseDto } from './dto/user-history-response-dto';
 
 @Injectable()
 export class UserService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async addWordToHistory(userId: string, wordId: string): Promise<History> {
-    return await this.prisma.history.create({
-      data: {
-        user_id: userId,
-        word_id: wordId,
-      },
-    });
-  }
+  async getUserHistory({
+    userId,
+    limit,
+    page,
+  }: UserHistoryRequestDto): Promise<UserHistoryResponseDto> {
+    const skip = (page - 1) * limit;
 
-  async addWordToFavorites(userId: string, wordId: string): Promise<Favorites> {
-    const existingFavorite = await this.prisma.favorites.findFirst({
-      where: {
-        user_id: userId,
-        word_id: wordId,
-      },
-    });
+    const [historyRecords, totalDocs] = await Promise.all([
+      this.prisma.history.findMany({
+        where: {
+          user_id: userId,
+        },
+        select: {
+          word: {
+            select: {
+              word: true,
+            },
+          },
+          created_at: true,
+        },
+        skip,
+        take: limit,
+        orderBy: {
+          created_at: 'desc',
+        },
+      }),
+      this.prisma.history.count({
+        where: {
+          user_id: userId,
+        },
+      }),
+    ]);
 
-    if (existingFavorite) {
-      return existingFavorite;
-    }
+    const totalPages = Math.ceil(totalDocs / limit);
+    const hasNext = page < totalPages;
+    const hasPrev = page > 1;
 
-    return await this.prisma.favorites.create({
-      data: {
-        user_id: userId,
-        word_id: wordId,
-      },
-    });
+    return {
+      results: historyRecords.map((record) => ({
+        word: record.word.word,
+        added: record.created_at,
+      })),
+      totalDocs,
+      page,
+      totalPages,
+      hasNext,
+      hasPrev,
+    };
   }
 }
