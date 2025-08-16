@@ -18,6 +18,7 @@ import { EntryQuerySearchRequestSchema } from './dto/entry-query-search-request-
 import { SwaggerQuerySearchEndpoint } from './decorators/swagger-query-search-endpoint.decorator';
 import { SwaggerWordDetailsEndpoint } from './decorators/swagger-word-details-endpoint.decorator';
 import { SwaggerAddWordToFavoritesEndpoint } from './decorators/swagger-add-word-to-favorites-endpoint.decorator';
+import { SwaggerRemoveWordFromFavoritesEndpoint } from './decorators/swagger-remove-word-from-favorites-endpoint.decorator';
 
 @ApiTags('Entries')
 @ApiBearerAuth('JWT-auth')
@@ -69,7 +70,7 @@ export class EntriesController {
 
   @Delete('en/:word/unfavorite')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @SwaggerAddWordToFavoritesEndpoint()
+  @SwaggerRemoveWordFromFavoritesEndpoint()
   async removeWordFromFavorites(
     @Request() req: RequestWithUser,
     @Param('word') word: string,
