@@ -26,7 +26,6 @@ export class UserController {
       page,
     });
     const userHistory = await this.userService.getUserHistory(parseResult);
-    console.log(userHistory);
     return userHistory;
   }
 }

@@ -7,6 +7,8 @@ describe('UserService', () => {
 
   const mockPrismaService = {
     history: {
+      findMany: jest.fn(),
+      count: jest.fn(),
       create: jest.fn(),
     },
     favorites: {
@@ -14,6 +16,29 @@ describe('UserService', () => {
       create: jest.fn(),
     },
   };
+
+  const mockUserId = 'user-123';
+  const mockHistoryRecords = [
+    {
+      word: { word: 'fire' },
+      created_at: new Date('2025-08-16T17:55:46.182Z'),
+    },
+    {
+      word: { word: 'test' },
+      created_at: new Date('2025-08-16T17:43:50.781Z'),
+    },
+  ];
+
+  const mockExpectedResults = [
+    {
+      word: 'fire',
+      added: new Date('2025-08-16T17:55:46.182Z'),
+    },
+    {
+      word: 'test',
+      added: new Date('2025-08-16T17:43:50.781Z'),
+    },
+  ];
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -35,5 +60,164 @@ describe('UserService', () => {
 
   it('should be defined', () => {
     expect(service).toBeDefined();
+  });
+
+  describe('getUserHistory', () => {
+    it('should return user history with pagination on first page', async () => {
+      const limit = 10;
+      const page = 1;
+      const totalDocs = 15;
+
+      mockPrismaService.history.findMany.mockResolvedValue(mockHistoryRecords);
+      mockPrismaService.history.count.mockResolvedValue(totalDocs);
+
+      const result = await service.getUserHistory({
+        userId: mockUserId,
+        limit,
+        page,
+      });
+
+      expect(result).toEqual({
+        results: mockExpectedResults,
+        totalDocs,
+        page,
+        totalPages: 2,
+        hasNext: true,
+        hasPrev: false,
+      });
+
+      expect(mockPrismaService.history.findMany).toHaveBeenCalledWith({
+        where: { user_id: mockUserId },
+        select: {
+          word: { select: { word: true } },
+          created_at: true,
+        },
+        skip: 0,
+        take: limit,
+        orderBy: { created_at: 'desc' },
+      });
+
+      expect(mockPrismaService.history.count).toHaveBeenCalledWith({
+        where: { user_id: mockUserId },
+      });
+    });
+
+    it('should return user history with pagination on second page', async () => {
+      const limit = 5;
+      const page = 2;
+      const totalDocs = 12;
+
+      mockPrismaService.history.findMany.mockResolvedValue(mockHistoryRecords);
+      mockPrismaService.history.count.mockResolvedValue(totalDocs);
+
+      const result = await service.getUserHistory({
+        userId: mockUserId,
+        limit,
+        page,
+      });
+
+      expect(result).toEqual({
+        results: mockExpectedResults,
+        totalDocs,
+        page,
+        totalPages: 3,
+        hasNext: true,
+        hasPrev: true,
+      });
+
+      expect(mockPrismaService.history.findMany).toHaveBeenCalledWith({
+        where: { user_id: mockUserId },
+        select: {
+          word: { select: { word: true } },
+          created_at: true,
+        },
+        skip: 5,
+        take: limit,
+        orderBy: { created_at: 'desc' },
+      });
+    });
+
+    it('should return user history on last page', async () => {
+      const limit = 10;
+      const page = 3;
+      const totalDocs = 25;
+
+      mockPrismaService.history.findMany.mockResolvedValue(mockHistoryRecords);
+      mockPrismaService.history.count.mockResolvedValue(totalDocs);
+
+      const result = await service.getUserHistory({
+        userId: mockUserId,
+        limit,
+        page,
+      });
+
+      expect(result).toEqual({
+        results: mockExpectedResults,
+        totalDocs,
+        page,
+        totalPages: 3,
+        hasNext: false,
+        hasPrev: true,
+      });
+
+      expect(mockPrismaService.history.findMany).toHaveBeenCalledWith({
+        where: { user_id: mockUserId },
+        select: {
+          word: { select: { word: true } },
+          created_at: true,
+        },
+        skip: 20,
+        take: limit,
+        orderBy: { created_at: 'desc' },
+      });
+    });
+
+    it('should return empty history when user has no records', async () => {
+      const limit = 10;
+      const page = 1;
+      const totalDocs = 0;
+
+      mockPrismaService.history.findMany.mockResolvedValue([]);
+      mockPrismaService.history.count.mockResolvedValue(totalDocs);
+
+      const result = await service.getUserHistory({
+        userId: mockUserId,
+        limit,
+        page,
+      });
+
+      expect(result).toEqual({
+        results: [],
+        totalDocs: 0,
+        page: 1,
+        totalPages: 0,
+        hasNext: false,
+        hasPrev: false,
+      });
+    });
+
+    it('should handle single page results', async () => {
+      const limit = 10;
+      const page = 1;
+      const totalDocs = 2;
+
+      mockPrismaService.history.findMany.mockResolvedValue(mockHistoryRecords);
+      mockPrismaService.history.count.mockResolvedValue(totalDocs);
+
+      const result = await service.getUserHistory({
+        userId: mockUserId,
+        limit,
+        page,
+      });
+
+      expect(result).toEqual({
+        results: mockExpectedResults,
+        totalDocs: 2,
+        page: 1,
+        totalPages: 1,
+        hasNext: false,
+        hasPrev: false,
+      });
+    });
   });
 });
