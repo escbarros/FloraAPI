@@ -6,6 +6,7 @@ import { HttpService } from '@nestjs/axios';
 import { AxiosError } from 'axios';
 import { firstValueFrom } from 'rxjs';
 import { EntryWordDetailFoundResponseDto } from './dto/entry-word-detail-found-response-dto';
+import { Favorites, History } from '@prisma/client';
 
 @Injectable()
 export class EntriesService {
@@ -91,5 +92,34 @@ export class EntriesService {
     }
 
     return entry.id;
+  }
+
+  async addWordToHistory(userId: string, wordId: string): Promise<History> {
+    return await this.prisma.history.create({
+      data: {
+        user_id: userId,
+        word_id: wordId,
+      },
+    });
+  }
+
+  async addWordToFavorites(userId: string, wordId: string): Promise<Favorites> {
+    const existingFavorite = await this.prisma.favorites.findFirst({
+      where: {
+        user_id: userId,
+        word_id: wordId,
+      },
+    });
+
+    if (existingFavorite) {
+      return existingFavorite;
+    }
+
+    return await this.prisma.favorites.create({
+      data: {
+        user_id: userId,
+        word_id: wordId,
+      },
+    });
   }
 }

@@ -12,10 +12,8 @@ describe('EntriesController', () => {
     getEntries: jest.fn(),
     getEntryDetail: jest.fn(),
     getWordId: jest.fn(),
-  };
-
-  const mockUserService = {
     addWordToHistory: jest.fn(),
+    addWordToFavorites: jest.fn(),
   };
 
   const mockJwtGuard = {
@@ -43,7 +41,7 @@ describe('EntriesController', () => {
   const expectFullWordDetailFlow = (word: string, wordId: string) => {
     expect(mockEntriesService.getWordId).toHaveBeenCalledWith(word);
     expect(mockEntriesService.getEntryDetail).toHaveBeenCalledWith(word);
-    expect(mockUserService.addWordToHistory).toHaveBeenCalledWith(
+    expect(mockEntriesService.addWordToHistory).toHaveBeenCalledWith(
       mockUserId,
       wordId,
     );
@@ -59,7 +57,7 @@ describe('EntriesController', () => {
         },
         {
           provide: UserService,
-          useValue: mockUserService,
+          useValue: mockEntriesService,
         },
       ],
     })
@@ -253,7 +251,9 @@ describe('EntriesController', () => {
     it('should return word details successfully', async () => {
       mockEntriesService.getWordId.mockResolvedValue(mockDefaultWordId);
       mockEntriesService.getEntryDetail.mockResolvedValue(mockWordDetails);
-      mockUserService.addWordToHistory.mockResolvedValue(mockHistoryResponse);
+      mockEntriesService.addWordToHistory.mockResolvedValue(
+        mockHistoryResponse,
+      );
 
       const result = await controller.getEntryDetail(
         mockRequest,
@@ -303,7 +303,9 @@ describe('EntriesController', () => {
       mockEntriesService.getEntryDetail.mockResolvedValue(
         wordDetailsWithSpecialChar,
       );
-      mockUserService.addWordToHistory.mockResolvedValue(mockHistoryResponse);
+      mockEntriesService.addWordToHistory.mockResolvedValue(
+        mockHistoryResponse,
+      );
 
       const result = await controller.getEntryDetail(
         mockRequest,
@@ -312,6 +314,80 @@ describe('EntriesController', () => {
 
       expect(result).toEqual(wordDetailsWithSpecialChar);
       expectFullWordDetailFlow(mockSpecialWord, mockSpecialWordId);
+    });
+  });
+
+  describe('addWordToFavorites', () => {
+    it('should add word to favorites successfully', async () => {
+      const mockFavoriteResponse = {
+        id: 'favorite-123',
+        user_id: mockUserId,
+        word_id: mockDefaultWordId,
+        created_at: new Date(),
+      };
+
+      mockEntriesService.getWordId.mockResolvedValue(mockDefaultWordId);
+      mockEntriesService.addWordToFavorites.mockResolvedValue(
+        mockFavoriteResponse,
+      );
+
+      await controller.addWordToFavorites(mockRequest, mockDefaultWord);
+
+      expect(mockEntriesService.getWordId).toHaveBeenCalledWith(
+        mockDefaultWord,
+      );
+      expect(mockEntriesService.addWordToFavorites).toHaveBeenCalledWith(
+        mockUserId,
+        mockDefaultWordId,
+      );
+    });
+
+    it('should handle word not found error when adding to favorites', async () => {
+      const word = 'nonexistentword';
+      const errorMessage = `Word not found: ${word}`;
+
+      mockEntriesService.getWordId.mockRejectedValue(new Error(errorMessage));
+
+      await expect(
+        controller.addWordToFavorites(mockRequest, word),
+      ).rejects.toThrow(errorMessage);
+      expect(mockEntriesService.getWordId).toHaveBeenCalledWith(word);
+      expect(mockEntriesService.addWordToFavorites).not.toHaveBeenCalled();
+    });
+
+    it('should handle duplicate favorites', async () => {
+      const existingFavorite = {
+        id: 'favorite-existing-789',
+        user_id: mockUserId,
+        word_id: mockDefaultWordId,
+        created_at: new Date('2025-01-01'),
+      };
+
+      mockEntriesService.getWordId.mockResolvedValue(mockDefaultWordId);
+      mockEntriesService.addWordToFavorites.mockResolvedValue(existingFavorite);
+
+      await controller.addWordToFavorites(mockRequest, mockDefaultWord);
+
+      expect(mockEntriesService.getWordId).toHaveBeenCalledWith(
+        mockDefaultWord,
+      );
+      expect(mockEntriesService.addWordToFavorites).toHaveBeenCalledWith(
+        mockUserId,
+        mockDefaultWordId,
+      );
+    });
+
+    it('should handle empty word parameter in favorites', async () => {
+      const word = '';
+      const errorMessage = 'Word not found: ';
+
+      mockEntriesService.getWordId.mockRejectedValue(new Error(errorMessage));
+
+      await expect(
+        controller.addWordToFavorites(mockRequest, word),
+      ).rejects.toThrow(errorMessage);
+      expect(mockEntriesService.getWordId).toHaveBeenCalledWith(word);
+      expect(mockEntriesService.addWordToFavorites).not.toHaveBeenCalled();
     });
   });
 });

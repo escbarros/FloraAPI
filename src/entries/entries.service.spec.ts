@@ -15,6 +15,44 @@ describe('EntriesService', () => {
       count: jest.fn(),
       findUnique: jest.fn(),
     },
+    history: {
+      create: jest.fn(),
+    },
+    favorites: {
+      create: jest.fn(),
+      findFirst: jest.fn(),
+    },
+  };
+
+  const mockUserId = 'user-123';
+  const mockWordId = 'word-456';
+
+  const mockHistoryEntry = {
+    id: 'history-789',
+    user_id: mockUserId,
+    word_id: mockWordId,
+    created_at: new Date('2025-08-16T14:30:00.000Z'),
+  };
+
+  const mockFavoriteEntry = {
+    id: 'favorite-101',
+    user_id: mockUserId,
+    word_id: mockWordId,
+    created_at: new Date('2025-08-16T14:30:00.000Z'),
+  };
+
+  const expectedCreateCall = {
+    data: {
+      user_id: mockUserId,
+      word_id: mockWordId,
+    },
+  };
+
+  const expectedFindFirstCall = {
+    where: {
+      user_id: mockUserId,
+      word_id: mockWordId,
+    },
   };
 
   const mockHttpService = {
@@ -460,6 +498,193 @@ describe('EntriesService', () => {
       expect(mockPrismaService.words.findUnique).toHaveBeenCalledWith({
         where: { word },
         select: { id: true },
+      });
+    });
+  });
+
+  describe('addWordToHistory', () => {
+    it('should create a new history entry successfully', async () => {
+      mockPrismaService.history.create.mockResolvedValue(mockHistoryEntry);
+
+      const result = await service.addWordToHistory(mockUserId, mockWordId);
+
+      expect(result).toEqual(mockHistoryEntry);
+      expect(mockPrismaService.history.create).toHaveBeenCalledWith(
+        expectedCreateCall,
+      );
+    });
+
+    it('should handle empty userId', async () => {
+      const emptyUserId = '';
+      const validationError = new Error('invalid user id');
+
+      mockPrismaService.history.create.mockRejectedValue(validationError);
+
+      await expect(
+        service.addWordToHistory(emptyUserId, mockWordId),
+      ).rejects.toThrow('invalid user id');
+
+      expect(mockPrismaService.history.create).toHaveBeenCalledWith({
+        data: {
+          user_id: emptyUserId,
+          word_id: mockWordId,
+        },
+      });
+    });
+
+    it('should handle empty wordId', async () => {
+      const emptyWordId = '';
+      const validationError = new Error('invalid word id');
+
+      mockPrismaService.history.create.mockRejectedValue(validationError);
+
+      await expect(
+        service.addWordToHistory(mockUserId, emptyWordId),
+      ).rejects.toThrow('invalid word id');
+
+      expect(mockPrismaService.history.create).toHaveBeenCalledWith({
+        data: {
+          user_id: mockUserId,
+          word_id: emptyWordId,
+        },
+      });
+    });
+  });
+
+  describe('addWordToFavorites', () => {
+    it('should create a new favorite when it does not exist', async () => {
+      mockPrismaService.favorites.findFirst.mockResolvedValue(null);
+      mockPrismaService.favorites.create.mockResolvedValue(mockFavoriteEntry);
+
+      const result = await service.addWordToFavorites(mockUserId, mockWordId);
+
+      expect(result).toEqual(mockFavoriteEntry);
+      expect(mockPrismaService.favorites.findFirst).toHaveBeenCalledWith(
+        expectedFindFirstCall,
+      );
+      expect(mockPrismaService.favorites.create).toHaveBeenCalledWith(
+        expectedCreateCall,
+      );
+    });
+
+    it('should return existing favorite when it already exists', async () => {
+      const existingFavorite = {
+        id: 'existing-favorite-123',
+        user_id: mockUserId,
+        word_id: mockWordId,
+        created_at: new Date('2025-01-01T00:00:00.000Z'),
+      };
+
+      mockPrismaService.favorites.findFirst.mockResolvedValue(existingFavorite);
+
+      const result = await service.addWordToFavorites(mockUserId, mockWordId);
+
+      expect(result).toEqual(existingFavorite);
+      expect(mockPrismaService.favorites.findFirst).toHaveBeenCalledWith(
+        expectedFindFirstCall,
+      );
+      expect(mockPrismaService.favorites.create).not.toHaveBeenCalled();
+    });
+
+    it('should handle database error during findFirst', async () => {
+      const databaseError = new Error('Database connection failed');
+
+      mockPrismaService.favorites.findFirst.mockRejectedValue(databaseError);
+
+      await expect(
+        service.addWordToFavorites(mockUserId, mockWordId),
+      ).rejects.toThrow('Database connection failed');
+
+      expect(mockPrismaService.favorites.findFirst).toHaveBeenCalledWith(
+        expectedFindFirstCall,
+      );
+      expect(mockPrismaService.favorites.create).not.toHaveBeenCalled();
+    });
+
+    it('should handle database error during create', async () => {
+      const createError = new Error('Failed to create favorite');
+
+      mockPrismaService.favorites.findFirst.mockResolvedValue(null);
+      mockPrismaService.favorites.create.mockRejectedValue(createError);
+
+      await expect(
+        service.addWordToFavorites(mockUserId, mockWordId),
+      ).rejects.toThrow('Failed to create favorite');
+
+      expect(mockPrismaService.favorites.findFirst).toHaveBeenCalledWith(
+        expectedFindFirstCall,
+      );
+      expect(mockPrismaService.favorites.create).toHaveBeenCalledWith(
+        expectedCreateCall,
+      );
+    });
+
+    it('should handle empty userId', async () => {
+      const emptyUserId = '';
+      const validationError = new Error('Invalid user ID');
+
+      mockPrismaService.favorites.findFirst.mockRejectedValue(validationError);
+
+      await expect(
+        service.addWordToFavorites(emptyUserId, mockWordId),
+      ).rejects.toThrow('Invalid user ID');
+
+      expect(mockPrismaService.favorites.findFirst).toHaveBeenCalledWith({
+        where: {
+          user_id: emptyUserId,
+          word_id: mockWordId,
+        },
+      });
+    });
+
+    it('should handle empty wordId', async () => {
+      const emptyWordId = '';
+      const validationError = new Error('Invalid word ID');
+
+      mockPrismaService.favorites.findFirst.mockRejectedValue(validationError);
+
+      await expect(
+        service.addWordToFavorites(mockUserId, emptyWordId),
+      ).rejects.toThrow('Invalid word ID');
+
+      expect(mockPrismaService.favorites.findFirst).toHaveBeenCalledWith({
+        where: {
+          user_id: mockUserId,
+          word_id: emptyWordId,
+        },
+      });
+    });
+
+    it('should handle special characters in IDs', async () => {
+      const specialUserId = 'user-with@special.chars';
+      const specialWordId = 'word-with-hyphens-123';
+      const specialFavorite = {
+        id: 'favorite-special-789',
+        user_id: specialUserId,
+        word_id: specialWordId,
+        created_at: new Date('2025-08-16T14:30:00.000Z'),
+      };
+
+      mockPrismaService.favorites.findFirst.mockResolvedValue(null);
+      mockPrismaService.favorites.create.mockResolvedValue(specialFavorite);
+
+      const result = await service.addWordToFavorites(
+        specialUserId,
+        specialWordId,
+      );
+
+      expect(result).toEqual(specialFavorite);
+      expect(mockPrismaService.favorites.findFirst).toHaveBeenCalledWith({
+        where: {
+          user_id: specialUserId,
+          word_id: specialWordId,
+        },
+      });
+      expect(mockPrismaService.favorites.create).toHaveBeenCalledWith({
+        data: {
+          user_id: specialUserId,
+          word_id: specialWordId,
+        },
       });
     });
   });
