@@ -91,7 +91,7 @@
   "lint-staged": {
     "*.{ts,js}": [
       "eslint --fix",
-      "jest -o"
+      "jest -o --passWithNoTests --silent"
     ]
   }
 }

@@ -17,8 +17,8 @@ async function bootstrap() {
   SwaggerModule.setup('api', app, documentFactory);
 
   app.useGlobalFilters(
-    new PrismaExceptionFilter(),
     new AllExceptionsFilter(),
+    new PrismaExceptionFilter(),
     new ZodExceptionFilter(),
   );
   await app.listen(process.env.PORT ?? 3000);
