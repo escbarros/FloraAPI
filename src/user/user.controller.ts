@@ -5,6 +5,7 @@ import type { RequestWithUser } from '../shared/types/JwtRequest';
 import { UserService } from './user.service';
 import { UserListPaginationRequestSchema } from './dto/user-list-pagination-request-dto';
 import { SwaggerUserHistoryEndpoint } from './decorators/swagger-user-history-endpoint.decorator';
+import { SwaggerUserFavoritesEndpoint } from './decorators/swagger-user-favorites-endpoint.decorator';
 
 @ApiTags('User')
 @ApiBearerAuth('JWT-auth')
@@ -12,7 +13,7 @@ import { SwaggerUserHistoryEndpoint } from './decorators/swagger-user-history-en
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
-  @Get('/history')
+  @Get('/me/history')
   @SwaggerUserHistoryEndpoint()
   async getUserHistory(
     @Request() req: RequestWithUser,
@@ -29,7 +30,8 @@ export class UserController {
     return userHistory;
   }
 
-  @Get('/favorites')
+  @Get('/me/favorites')
+  @SwaggerUserFavoritesEndpoint()
   async getUserFavorites(
     @Request() req: RequestWithUser,
     @Query('limit') limit?: string,
