@@ -1,7 +1,10 @@
 import {
   Controller,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
+  Post,
   Query,
   Request,
   UseGuards,
@@ -47,10 +50,21 @@ export class EntriesController {
     @Request() req: RequestWithUser,
     @Param('word') word: string,
   ) {
-    const { sub: id } = req.user;
+    const { sub: userId } = req.user;
     const wordId = await this.entryService.getWordId(word);
     const wordDetails = await this.entryService.getEntryDetail(word);
-    await this.userService.addWordToHistory(id, wordId);
+    await this.userService.addWordToHistory(userId, wordId);
     return wordDetails;
+  }
+
+  @Post('en/:word/favorite')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async addWordToFavorites(
+    @Request() req: RequestWithUser,
+    @Param('word') word: string,
+  ) {
+    const { sub: userId } = req.user;
+    const wordId = await this.entryService.getWordId(word);
+    await this.userService.addWordToFavorites(userId, wordId);
   }
 }
