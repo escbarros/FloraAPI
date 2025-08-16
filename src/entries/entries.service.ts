@@ -122,4 +122,22 @@ export class EntriesService {
       },
     });
   }
+
+  async removeWordFromFavorites(userId: string, wordId: string): Promise<void> {
+    const existingFavorite = await this.prisma.favorites.findFirst({
+      where: {
+        user_id: userId,
+        word_id: wordId,
+      },
+    });
+    if (!existingFavorite) {
+      throw new NotFoundException(`user has not set word as its favorite`);
+    }
+
+    await this.prisma.favorites.delete({
+      where: {
+        id: existingFavorite.id,
+      },
+    });
+  }
 }

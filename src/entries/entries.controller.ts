@@ -1,5 +1,6 @@
 import {
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -16,6 +17,7 @@ import { EntriesService } from './entries.service';
 import { EntryQuerySearchRequestSchema } from './dto/entry-query-search-request-dto';
 import { SwaggerQuerySearchEndpoint } from './decorators/swagger-query-search-endpoint.decorator';
 import { SwaggerWordDetailsEndpoint } from './decorators/swagger-word-details-endpoint.decorator';
+import { SwaggerAddWordToFavoritesEndpoint } from './decorators/swagger-add-word-to-favorites-endpoint.decorator';
 
 @ApiTags('Entries')
 @ApiBearerAuth('JWT-auth')
@@ -55,6 +57,7 @@ export class EntriesController {
 
   @Post('en/:word/favorite')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @SwaggerAddWordToFavoritesEndpoint()
   async addWordToFavorites(
     @Request() req: RequestWithUser,
     @Param('word') word: string,
@@ -62,5 +65,17 @@ export class EntriesController {
     const { sub: userId } = req.user;
     const wordId = await this.entryService.getWordId(word);
     await this.entryService.addWordToFavorites(userId, wordId);
+  }
+
+  @Delete('en/:word/unfavorite')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @SwaggerAddWordToFavoritesEndpoint()
+  async removeWordFromFavorites(
+    @Request() req: RequestWithUser,
+    @Param('word') word: string,
+  ) {
+    const { sub: userId } = req.user;
+    const wordId = await this.entryService.getWordId(word);
+    await this.entryService.removeWordFromFavorites(userId, wordId);
   }
 }
