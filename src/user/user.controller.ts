@@ -4,6 +4,7 @@ import { JwtGuard } from '../shared/middleware/jwt.guard';
 import type { RequestWithUser } from '../shared/types/JwtRequest';
 import { UserService } from './user.service';
 import { UserHistoryRequestSchema } from './dto/user-history-request-dto';
+import { SwaggerUserHistoryEndpoint } from './decorators/swagger-user-history-endpoint.decorator';
 
 @ApiTags('User')
 @ApiBearerAuth('JWT-auth')
@@ -12,6 +13,7 @@ import { UserHistoryRequestSchema } from './dto/user-history-request-dto';
 export class UserController {
   constructor(private readonly userService: UserService) {}
   @Get('/history')
+  @SwaggerUserHistoryEndpoint()
   async getUserHistory(
     @Request() req: RequestWithUser,
     @Query('limit') limit?: string,
