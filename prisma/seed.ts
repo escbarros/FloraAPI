@@ -1,12 +1,24 @@
 import { PrismaClient } from '../generated/prisma';
-import wordsDictionary from '../words_dictionary.json';
 
 const prisma = new PrismaClient();
 
 async function main(): Promise<void> {
+  console.log('fetching words dictionary...');
+  const response = await fetch(
+    'https://raw.githubusercontent.com/dwyl/english-words/refs/heads/master/words_dictionary.json',
+  );
+
+  if (!response.ok) {
+    throw new Error(`failed to download dictionary: ${response.statusText}`);
+  }
+  console.log('downloading words dictionary...');
+  const wordsDictionary = (await response.json()) as Record<string, unknown>;
+
   const wordsArray = Object.keys(wordsDictionary).map((word) => ({ word }));
+
   await prisma.words.createMany({ data: wordsArray, skipDuplicates: true });
-  console.log('Seeding completed');
+
+  console.log('seeding completed');
 }
 
 main()
