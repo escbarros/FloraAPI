@@ -3,6 +3,7 @@ import { UserController } from './user.controller';
 import { UserService } from './user.service';
 import { JwtGuard } from '../shared/middleware/jwt.guard';
 import type { RequestWithUser } from '../shared/types/JwtRequest';
+import { CacheModule } from '@nestjs/cache-manager';
 
 describe('UserController', () => {
   let controller: UserController;
@@ -44,6 +45,7 @@ describe('UserController', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
+      imports: [CacheModule.register()],
       controllers: [UserController],
       providers: [
         {

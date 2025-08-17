@@ -4,6 +4,8 @@ import { EntriesService } from './entries.service';
 import { JwtGuard } from '../shared/middleware/jwt.guard';
 import type { RequestWithUser } from '../shared/types/JwtRequest';
 import { UserService } from '../user/user.service';
+import { CACHE_MANAGER, CacheModule } from '@nestjs/cache-manager';
+import { CacheService } from '../shared/cache.service';
 
 describe('EntriesController', () => {
   let controller: EntriesController;
@@ -15,6 +17,13 @@ describe('EntriesController', () => {
     addWordToHistory: jest.fn(),
     addWordToFavorites: jest.fn(),
     removeWordFromFavorites: jest.fn(),
+  };
+
+  const mockCacheManager = {
+    get: jest.fn(),
+    set: jest.fn(),
+    del: jest.fn(),
+    invalidateUserCache: jest.fn(),
   };
 
   const mockJwtGuard = {
@@ -50,6 +59,7 @@ describe('EntriesController', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
+      imports: [CacheModule.register()],
       controllers: [EntriesController],
       providers: [
         {
@@ -59,6 +69,14 @@ describe('EntriesController', () => {
         {
           provide: UserService,
           useValue: mockEntriesService,
+        },
+        {
+          provide: CacheService,
+          useValue: mockCacheManager,
+        },
+        {
+          provide: CACHE_MANAGER,
+          useValue: mockCacheManager,
         },
       ],
     })
