@@ -25,15 +25,8 @@ services:
   api:
     build: .
     container_name: flora-api
-    environment:
-      NODE_ENV: development
-      PORT: 3000
-      HOST: 0.0.0.0
-      DATABASE_URL: postgresql://flora_user:flora_password@postgres:5432/flora_db?schema=public
-      JWT_SECRET: dde7a61e5e8c8481503e858ee82043aa4086e84e1c9b44d4172bcb6f7cfe51fb
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      REDIS_TTL: 300
+    env_file:
+      - path: ./.env.docker
     ports:
       - '3000:3000'
     depends_on:
