@@ -66,7 +66,7 @@ echo "${pass}" | docker login --username "${user}" --password-stdin
 # Clona repositório
 cd /home/ubuntu
 if [ ! -d "flora-api" ]; then
-  git clone https://github.com/eduardoscb/flora-api.git
+  git clone https://github.com/escbarros/FloraAPI.git
 fi
 cd flora-api
 
