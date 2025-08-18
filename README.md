@@ -84,7 +84,10 @@ Inicie os bancos de dados
 docker-compose up -d postgres redis
 npx prisma migrate dev --name init
 npx prisma generate
+npm run db:seed
 ```
+
+Esse ultimo comando baixa as palavras do repositório e salva no banco de dados local
 
 <hr/>
 
