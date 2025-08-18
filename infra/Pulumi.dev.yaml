@@ -1,0 +1,5 @@
+config:
+  aws:region: sa-east-1
+  infra-flora:dockerUsername: eduardoscb
+  infra-flora:dockerPassword:
+    secure: AAABAGq0mtKAR3V1wl+5vM4i2kWxCzNCHY9HJQaQY7BPfI+Iep/rqtOcYKD9svEY06aHlG8eUnOeZRiXsjZ6yDO/Dqg=
