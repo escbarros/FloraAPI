@@ -1,0 +1,14 @@
+infra/
+
+node_modules
+npm-debug.log
+.env
+
+dist
+build
+
+.git
+.gitignore
+
+README.md
+.dockerignore
