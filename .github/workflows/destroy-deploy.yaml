@@ -24,6 +24,7 @@ jobs:
           aws-region: sa-east-1
 
       - name: Install Pulumi CLI
+        working-directory: infra
         uses: pulumi/actions@v6
         with:
           command: preview
