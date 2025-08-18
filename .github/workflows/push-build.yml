@@ -52,9 +52,9 @@ jobs:
         run: npm install
 
       - name: Install Pulumi CLI
-        uses: pulumi/actions@v5
+        uses: pulumi/setup-pulumi@v3
         with:
-          command: version
+          pulumi-version: latest
 
       - name: Configure Pulumi
         working-directory: infra
