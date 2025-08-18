@@ -65,10 +65,10 @@ echo "${pass}" | docker login --username "${user}" --password-stdin
 
 # Clona repositório
 cd /home/ubuntu
-if [ ! -d "flora-api" ]; then
+if [ ! -d "FloraAPI" ]; then
   git clone https://github.com/escbarros/FloraAPI.git
 fi
-cd flora-api
+cd FloraAPI
 
 # Cria .env com secrets
 cat <<'EOFENV' > .env
