@@ -55,6 +55,9 @@ jobs:
         uses: pulumi/actions@v6
         with:
           command: preview
+          stack-name: escbarros-org/infra-flora/dev
+        env:
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
 
       - name: Configure Pulumi
         working-directory: infra
