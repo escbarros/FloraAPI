@@ -25,7 +25,6 @@ jobs:
 
       - name: Install Pulumi CLI
         uses: pulumi/actions@v5
-        - uses: pulumi/actions@v6
         with:
           command: preview
           stack-name: escbarros-org/infra-flora/dev
