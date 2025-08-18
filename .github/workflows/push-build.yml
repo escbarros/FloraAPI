@@ -59,7 +59,7 @@ jobs:
           pulumi config set dockerUsername ${{ secrets.DOCKERHUB_USERNAME }}
           pulumi config set --secret dockerPassword ${{ secrets.DOCKERHUB_TOKEN }}
           pulumi config set --secret envFile "${{ secrets.ENV_FILE }}"
-          pulumi config set aws:region us-east-1
+          pulumi config set aws:region sa-east-1
         env:
           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
 
