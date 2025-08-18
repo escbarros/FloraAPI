@@ -23,10 +23,13 @@ services:
     command: ['redis-server', '--appendonly', 'yes']
 
   api:
-    build: .
+    image: eduardoscb/flora-api:latest
     container_name: flora-api
     env_file:
-      - path: ./.env.docker
+      - ./.env
+    environment:
+      DATABASE_URL: 'postgresql://flora_user:flora_password@postgres:5432/flora_db?schema=public'
+      REDIS_HOST: 'redis'
     ports:
       - '3000:3000'
     depends_on:
@@ -35,6 +38,7 @@ services:
     networks:
       - flora-network
     command: sh -c "while ! nc -z postgres 5432; do sleep 1; done; npx prisma migrate deploy && node dist/prisma/seed.js && node dist/src/main.js"
+
 volumes:
   postgres_data:
 
