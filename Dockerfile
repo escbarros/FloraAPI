@@ -12,11 +12,12 @@ COPY prisma ./prisma/
 
 RUN npm ci --ignore-scripts
 
-COPY . .
-
-RUN npx prisma generate
 
 ENV DATABASE_URL="postgresql://user:pass@host:5432/db?schema=public"
+RUN npx prisma generate
+
+COPY . .
+
 RUN npm run build
 
 RUN npm prune --production
@@ -37,9 +38,6 @@ COPY --from=builder --chown=flora:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=flora:nodejs /app/dist ./dist
 COPY --from=builder --chown=flora:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=flora:nodejs /app/package.json ./package.json
-
-ENV DATABASE_URL="postgresql://user:pass@host:5432/db?schema=public"
-RUN npx prisma generate
 
 USER flora
 
