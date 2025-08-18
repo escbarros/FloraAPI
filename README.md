@@ -230,7 +230,7 @@ Retornado se as credenciais (e-mail ou senha) estiverem incorretas.
 ### Entries
 
 <details>
-<summary><strong>[GET] /en</strong></summary>
+<summary><strong>[GET] /entries/en</strong></summary>
 
 Busca por registros com base em uma palavra-chave, com suporte para paginação.
 
@@ -253,7 +253,7 @@ Os parâmetros são enviados na URL para filtrar e paginar os resultados.
 | `limit`   | number | **Opcional.** Resultados por página.  | `10`    |
 
 **Exemplo de URL:**
-`/en?search=fire&page=1&limit=10`
+`/entries/en?search=fire&page=1&limit=10`
 
 **Responses**
 
@@ -289,7 +289,7 @@ Retornado se os parâmetros da query forem inválidos (ex: `page` ou `limit` nã
 </details>
 
 <details>
-<summary><strong>[GET] /en/:word</strong></summary>
+<summary><strong>[GET] /entries/en/:word</strong></summary>
 
 Obtém os detalhes de uma palavra específica, como suas definições e classe gramatical.
 
@@ -310,7 +310,7 @@ O parâmetro obrigatório deve ser incluído diretamente no caminho da URL.
 | `{word}`  | **Obrigatório.** A palavra a ser buscada. | `fire`  |
 
 **Exemplo de URL:**
-`/en/fire`
+`/entries/en/fire`
 
 **Responses**
 
@@ -360,7 +360,7 @@ Retornado se não forem encontradas definições para a palavra especificada.
 </details>
 
 <details>
-<summary><strong>[POST] /en/:word/favorite</strong></summary>
+<summary><strong>[POST] /entries/en/:word/favorite</strong></summary>
 
 Adiciona uma palavra específica à lista de favoritos do usuário autenticado.
 
@@ -381,7 +381,7 @@ O parâmetro obrigatório deve ser incluído diretamente no caminho da URL.
 | `{word}`  | **Obrigatório.** A palavra a ser favoritada. | `fire`  |
 
 **Exemplo de URL:**
-`/en/fire/favorites`
+`/entries/en/fire/favorites`
 
 ### **Responses**
 
@@ -408,7 +408,7 @@ Retornado se a palavra especificada não for encontrada no sistema.
 </details>
 
 <details>
-<summary><strong>[DELETE] /en/:word/unfavorite</strong></summary>
+<summary><strong>[DELETE] /entries/en/:word/unfavorite</strong></summary>
 
 Remove uma palavra da lista de favoritos do usuário autenticado.
 
@@ -429,7 +429,7 @@ O parâmetro obrigatório deve ser incluído diretamente no caminho da URL.
 | `{word}`  | **Obrigatório.** A palavra a ser removida dos favoritos. | `fire`  |
 
 **Exemplo de URL:**
-`/en/fire/unfavorite`
+`/entries/en/fire/unfavorite`
 
 **Responses**
 
